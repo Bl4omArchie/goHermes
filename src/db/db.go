@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
     "database/sql"
@@ -6,18 +6,20 @@ import (
 	"os"
     _ "github.com/lib/pq"
 	"github.com/joho/godotenv"
+	"github.com/Bl4omArchie/ePrint-DB/src/utils"
+	//"github.com/Bl4omArchie/ePrint-DB/src/api"
 )
 
-
-func CheckError(err error) {
-    if err != nil {
-        panic(err)
-    }
+type Paper struct {
+	Id int64
+    Title string
+    Link string
+    Publication_date int64
 }
 
-func main() {
+func ConnectDatabase() {
 	err := godotenv.Load()
-	CheckError(err)
+	utils.CheckError(err)
 
 	var (
 		host = os.Getenv("DB_HOST")
@@ -30,10 +32,14 @@ func main() {
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlconn)
-	CheckError(err)
+	utils.CheckError(err)
 
 	err = db.Ping()
-	CheckError(err)
+	utils.CheckError(err)
 
 	fmt.Println("> Connected")
+}
+
+func disconnect_database() {
+	
 }
