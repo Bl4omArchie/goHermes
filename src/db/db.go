@@ -17,7 +17,13 @@ type Paper struct {
     Publication_date int64
 }
 
-func ConnectDatabase() {
+type Database struct {
+	ConnectionChain string
+	SqlDatabase *sql.DB
+	Name string
+}
+
+func ConnectDatabase() (*Database, error) {
 	err := godotenv.Load()
 	utils.CheckError(err)
 
@@ -37,9 +43,17 @@ func ConnectDatabase() {
 	err = db.Ping()
 	utils.CheckError(err)
 
-	fmt.Println("> Connected")
+	fmt.Println("> Connected !")
+
+    return &Database{
+        ConnectionChain: psqlconn,
+        SqlDatabase: db,
+		Name: dbname,
+    }, nil
 }
 
-func disconnect_database() {
-	
+func DisconnectDatabase(db *Database) {
+	err := db.SqlDatabase.Close()
+	utils.CheckError(err)
+	fmt.Println("> Disconnected !")
 }
