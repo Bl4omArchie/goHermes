@@ -23,7 +23,7 @@ type Database struct {
 	Name string
 }
 
-func ConnectDatabase() (*Database, error) {
+func ConnectDatabase() (*Database) {
 	err := godotenv.Load()
 	utils.CheckError(err)
 
@@ -49,7 +49,7 @@ func ConnectDatabase() (*Database, error) {
         ConnectionChain: psqlconn,
         SqlDatabase: db,
 		Name: dbname,
-    }, nil
+    }
 }
 
 func DisconnectDatabase(db *Database) {

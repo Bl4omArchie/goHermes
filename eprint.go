@@ -7,7 +7,7 @@ import (
 
 
 func main() {
-	database, err = db.ConnectDatabase()
+	database := db.ConnectDatabase()
 
 	defer db.DisconnectDatabase(database)
 }
