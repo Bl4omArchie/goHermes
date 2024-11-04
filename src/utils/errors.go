@@ -1,12 +1,22 @@
 package utils
 
 
-import "fmt"
+import (
+    "fmt"
+    "log"
+)
 
 
+// print error
 func CheckError(err error) {
     if err != nil {
-        fmt.Println("Error:", err)
-        panic(err)
+        log.Printf("Error:", err)
+    }
+}
+
+// print error and quit the program
+func CheckErrorQuit(err error) {
+    if err != nil {
+        log.Fatalf("Error:", err)
     }
 }
