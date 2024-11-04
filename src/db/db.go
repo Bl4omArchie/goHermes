@@ -1,26 +1,32 @@
 package db
 
 import (
-    "database/sql"
 	"fmt"
 	"os"
-    _ "github.com/lib/pq"
+	"time"
+	"database/sql"
+	_ "github.com/lib/pq"
 	"github.com/joho/godotenv"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
-	//"github.com/Bl4omArchie/ePrint-DB/src/api"
 )
 
 type Paper struct {
 	Id int64
     Title string
     Link string
-    Publication_date int64
+    Publication_date time.Time
+	Categorie string
+	Year int
 }
 
 type Database struct {
 	ConnectionChain string
 	SqlDatabase *sql.DB
 	Name string
+}
+
+func InsertPaper() {
+	
 }
 
 func ConnectDatabase() (*Database) {

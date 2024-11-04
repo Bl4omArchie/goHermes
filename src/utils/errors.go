@@ -1,10 +1,7 @@
 package utils
 
 
-import (
-    "fmt"
-    "log"
-)
+import "log"
 
 
 // print error
