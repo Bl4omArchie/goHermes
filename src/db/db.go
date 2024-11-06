@@ -3,21 +3,12 @@ package db
 import (
 	"fmt"
 	"os"
-	"time"
 	"database/sql"
 	_ "github.com/lib/pq"
 	"github.com/joho/godotenv"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
 )
 
-type Paper struct {
-	Id int64
-    Title string
-    Link string
-    Publication_date time.Time
-	Categorie string
-	Year int
-}
 
 type Database struct {
 	ConnectionChain string
@@ -44,12 +35,12 @@ func ConnectDatabase() (*Database) {
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlconn)
-	utils.CheckError(err)
+	utils.CheckErrorQuit(err)
 
 	err = db.Ping()
-	utils.CheckError(err)
+	utils.CheckErrorQuit(err)
 
-	fmt.Println("> Connected !")
+	fmt.Println("\033[32m> Connected !\033[0m\n")
 
     return &Database{
         ConnectionChain: psqlconn,
@@ -61,5 +52,5 @@ func ConnectDatabase() (*Database) {
 func DisconnectDatabase(db *Database) {
 	err := db.SqlDatabase.Close()
 	utils.CheckError(err)
-	fmt.Println("> Disconnected !")
+	fmt.Println("\033[32m> Disconnected !\033[0m")
 }

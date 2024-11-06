@@ -2,9 +2,14 @@ package api
 
 
 import (
+	"os"
+	"strings"
 	"fmt"
 	"io"
+	"bufio"
+	"regexp"
 	"net/http"
+	mapset "github.com/deckarep/golang-set/v2"
 	_ "github.com/cavaliergopher/grab/v3"
 	"github.com/Bl4omArchie/ePrint-DB/src/db"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
@@ -13,7 +18,7 @@ import (
 var (
 	url = "https://eprint.iacr.org/"
 	
-	categories = []string {
+	tags = mapset.NewSet[string](
 		"Applications",
 		"Cryptographic protocols",
 		"Foundations",
@@ -21,36 +26,77 @@ var (
 		"Secret-key cryptography",
 		"Public-key cryptography",
 		"Attacks and cryptanalysis",
-	}
-
-	years = []string {"2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2010", 
-					"2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999", "1998", "1997", "1996"}
+		"2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2010", 
+		"2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999", "1998", "1997", "1996")
 )
 
-func DownloadPapersByCategories(year int) {
-		
+type Papers struct {
+    Title string
+    Link string
+    Publication_year int
+	Categorie string
 }
 
-func DownloadPapersByYears(year int) {
-		
-}
+func DownloadPapers(input_list []string) {
+	url := "https://eprint.iacr.org/2024/1795"
+	paper := Papers{}
 
-func DownloadPapers(years []string) {
-	url := "https://eprint.iacr.org/2024/1797"
 	resp, err := http.Get(url)
 	utils.CheckError(err)
-	fmt.Println(resp)
+	defer resp.Body.Close()
 
-	_, err = io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	utils.CheckError(err)
+
+	re := regexp.MustCompile(`@misc{cryptoeprint:[^}]+}`)
+	match := re.Find(body)
+	utils.RaiseFlag(match)
+	
+	re = regexp.MustCompile(`<small class="[^"]+">([^<]+)</small>`)
+	matchCategory := re.FindStringSubmatch(string(body))
+	
+	if len(matchCategory) > 1 {
+		paper.Categorie = matchCategory[1]
+	}
 }
 
+func VerifyInput(input []string) int {
+	for _, element := range input {
+		if !tags.Contains(element) {
+			utils.CheckErrorCustom("Category or year not found")
+			return 0
+		}
+	}
+	return 1
+}
+
+
 func StartApplication() {
+	// Welcome message and database connection
+	fmt.Println("\n\033[34m === Welcome to ePrint PDF download tool ===\033[0m\n")
 	database := db.ConnectDatabase()
+	
+	// Option for downloading PDF
+	fmt.Println("| -> Write what years or categories you want to be downloaded below")
+	fmt.Println("| -> Write 'all' to download every PDF\n")
+	
+	// Read the user input and clear it
+	reader := bufio.NewReader(os.Stdin)
+	var input_list []string
+	download_ready := 0
 
-	liste_years := []string {"2024"}
+	for download_ready == 0 {
+		fmt.Print("Enter option: ")
+		text, _ := reader.ReadString('\n')
+		text = strings.TrimSpace(text)
+		input_list = strings.Fields(text)
 
-	DownloadPapers(liste_years)
+		download_ready = VerifyInput(input_list)
+	}
 
+	// Start downloading
+	DownloadPapers(input_list)
+
+	// Disconnect the DB and quit the program
 	defer db.DisconnectDatabase(database)
 }
