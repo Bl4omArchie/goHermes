@@ -18,17 +18,29 @@ import (
 
 var (
 	url = "https://eprint.iacr.org/"
+
 	
-	tags = mapset.NewSet[string](
+	
+	categories = mapset.NewSet[string](
 		"Applications",
 		"Cryptographic protocols",
 		"Foundations",
 		"Implementation",
 		"Secret-key cryptography",
 		"Public-key cryptography",
-		"Attacks and cryptanalysis",
+		"Attacks and cryptanalysis",)
+	
+	years = mapset.NewSet[string](
 		"2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2010", 
 		"2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999", "1998", "1997", "1996")
+	tags = mapset.NewSet[string]().Union(categories).Union(years)
+
+	papers_by_years = map[string]int {
+		"2024":1799, "2023":1971, "2022":1781, "2021":1705, "2020":1620,
+		"2019":1498, "2018":1249, "2017":1262, "2016":1195, "2015":1255, "2014":1029, "2013":881, "2012":733, "2011":714, "2010":660,
+		"2009":638, "2008":545, "2007":482, "2006":485, "2005":469, "2004":375, "2003":265, "2002":195, "2001":113, "2000":69,
+		"1999":24, "1998":26, "1997":15, "1996": 16,
+	}
 )
 
 type Papers struct {
@@ -61,6 +73,7 @@ func RetrieveDataPaper(url string) {
 	}
 }
 
+
 func DownloadPapers(input_list []string) {
 	url = "https://eprint.iacr.org/2024/"
 
@@ -70,6 +83,7 @@ func DownloadPapers(input_list []string) {
 	}
 	fmt.Println("Temps d'exécution:", time.Since(start))
 }
+
 
 func VerifyInput(input []string) int {
 	for _, element := range input {
@@ -108,6 +122,6 @@ func StartApplication() {
 	// Start downloading
 	DownloadPapers(input_list)
 
-	// Disconnect the DB and quit the program
+	// Disconnect the DB
 	defer db.DisconnectDatabase(database)
 }
