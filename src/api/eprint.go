@@ -3,6 +3,7 @@ package api
 
 import (
 	"os"
+	"sync"
 	"strconv"
 	"strings"
 	"fmt"
@@ -18,8 +19,6 @@ import (
 
 var (
 	url = "https://eprint.iacr.org/"
-
-	
 	
 	categories = mapset.NewSet[string](
 		"Applications",
@@ -51,7 +50,8 @@ type Papers struct {
 	File_data string
 }
 
-func RetrieveDataPaper(url string) {
+func RetrieveDataPaper(url string, wg2 *sync.WaitGroup) {
+	defer wg2.Done()
 	paper := Papers{}
 
 	resp, err := http.Get(url)
@@ -74,13 +74,19 @@ func RetrieveDataPaper(url string) {
 }
 
 
-func DownloadPapers(input_list []string) {
-	url = "https://eprint.iacr.org/2024/"
+func DownloadPapers(input_list []string, wg1 *sync.WaitGroup) {
+	defer wg1.Done()
+	var wg2 sync.WaitGroup
+
+	url := "https://eprint.iacr.org/"
 
 	start := time.Now()
-	for i:=1; i<1799; i++ {
-		RetrieveDataPaper(url+strconv.Itoa(i))
+	for i := 1; i <= 1799; i++ {
+		time.Sleep(500)
+		wg2.Add(1)
+		go RetrieveDataPaper(url + input_list[0] + "/" + strconv.Itoa(i), &wg2)
 	}
+	wg2.Wait()
 	fmt.Println("Temps d'exécution:", time.Since(start))
 }
 
@@ -120,7 +126,7 @@ func StartApplication() {
 	}
 
 	// Start downloading
-	DownloadPapers(input_list)
+	//DownloadPapers(input_list)
 
 	// Disconnect the DB
 	defer db.DisconnectDatabase(database)
