@@ -73,7 +73,6 @@ func RetrieveDataPaper(url string, wg2 *sync.WaitGroup) {
 	}
 }
 
-
 func DownloadPapers(input_list []string, wg1 *sync.WaitGroup) {
 	defer wg1.Done()
 	var wg2 sync.WaitGroup
