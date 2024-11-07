@@ -3,14 +3,15 @@ package api
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"fmt"
 	"io"
+	"time"
 	"bufio"
 	"regexp"
 	"net/http"
 	mapset "github.com/deckarep/golang-set/v2"
-	_ "github.com/cavaliergopher/grab/v3"
 	"github.com/Bl4omArchie/ePrint-DB/src/db"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
 )
@@ -34,11 +35,11 @@ type Papers struct {
     Title string
     Link string
     Publication_year int
-	Categorie string
+	Category string
+	File_data string
 }
 
-func DownloadPapers(input_list []string) {
-	url := "https://eprint.iacr.org/2024/1795"
+func RetrieveDataPaper(url string) {
 	paper := Papers{}
 
 	resp, err := http.Get(url)
@@ -56,8 +57,18 @@ func DownloadPapers(input_list []string) {
 	matchCategory := re.FindStringSubmatch(string(body))
 	
 	if len(matchCategory) > 1 {
-		paper.Categorie = matchCategory[1]
+		paper.Category = matchCategory[1]
 	}
+}
+
+func DownloadPapers(input_list []string) {
+	url = "https://eprint.iacr.org/2024/"
+
+	start := time.Now()
+	for i:=1; i<1799; i++ {
+		RetrieveDataPaper(url+strconv.Itoa(i))
+	}
+	fmt.Println("Temps d'exécution:", time.Since(start))
 }
 
 func VerifyInput(input []string) int {

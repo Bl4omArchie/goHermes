@@ -8,8 +8,6 @@ require (
 )
 
 require (
-	github.com/cavaliercoder/grab v3.0.1+incompatible // indirect
-	github.com/cavaliergopher/grab/v3 v3.0.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect

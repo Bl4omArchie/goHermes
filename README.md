@@ -7,9 +7,7 @@ Technologies :
 - SGBD : postgreSQL
 - concurrency
 
-Here is a schema representing my goal for downloading in concurrency each pdf :
+Result of retrieving datas from every 2024 papers :
 ```
-	     download paper 
-start -> download paper -> store the paper
-	     download paper 
+Temps d'exécution: 4m43.4106983s
 ```
