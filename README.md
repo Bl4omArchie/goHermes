@@ -39,12 +39,10 @@ Start: GetPapersYear -> For each papers: RetrieveDataPaper -> DownloadPaper -> I
 ```
 
 First idea :
-- One goroutine for each years
 - A fixed number N of goroutines for stages 1, 2 and 3 <br/>
 (ie : I create 100 goroutines for each stages and when they have finished one task, they continue with the next one)
 
 Second idea :
-- One goroutine for each years
 - N goroutines for each stages that cannot exceed a limit P of goroutines. <br/>
 (ie : I create goroutines for my task until I reached the limit P. Then I wait that some of them has done to create a new ones) 
 

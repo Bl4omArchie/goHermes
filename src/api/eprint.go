@@ -32,7 +32,6 @@ var (
 	years = mapset.NewSet[string](
 		"2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2010", 
 		"2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999", "1998", "1997", "1996")
-	tags = mapset.NewSet[string]().Union(categories).Union(years)
 )
 
 
@@ -45,8 +44,19 @@ type Papers struct {
 }
 
 
-func RetrieveDataPaper(url string, wg2 *sync.WaitGroup) {
-	defer wg2.Done()
+// Insert the given paper into the database
+func StorePdf(paper Papers) {
+
+}
+
+// Download the pdf from the given url
+func GetPdf(url string, wg *sync.WaitGroup) {
+	defer wg.Done()
+}
+
+// Retrieve data such as Category and title
+func RetrieveData(url string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	paper := Papers{}
 
 	resp, err := http.Get(url)
@@ -68,26 +78,32 @@ func RetrieveDataPaper(url string, wg2 *sync.WaitGroup) {
 	}
 }
 
-func DownloadPapers(input_list []string, wg1 *sync.WaitGroup) {
-	defer wg1.Done()
-	var wg2 sync.WaitGroup
+// Take a list of years (ie: 2024, 2023 ...) and launch the stages of data retrieve and pdf download
+func DownloadPapers(input_list []string) {
+	var wg1 sync.WaitGroup
 
 	url := "https://eprint.iacr.org/"
 
 	start := time.Now()
-	for i := 1; i <= PapersByYear[input_list[0]]; i++ {
-		time.Sleep(500)
-		wg2.Add(1)
-		go RetrieveDataPaper(url + input_list[0] + "/" + strconv.Itoa(i), &wg2)
+	for n_year :=0; n_year<len(input_list); n_year++ {
+		
+		for i := 1; i <= PapersByYear[input_list[n_year]]; i++ {
+			time.Sleep(500)
+			
+			wg1.Add(1)
+			
+			go RetrieveData(url + input_list[n_year] + "/" + strconv.Itoa(i), &wg1)
+		}
+		wg1.Wait()
 	}
-	wg2.Wait()
+
 	fmt.Println("Temps d'exécution:", time.Since(start))
-}
+} 
 
 
 func VerifyInput(input []string) int {
 	for _, element := range input {
-		if !tags.Contains(element) {
+		if !years.Contains(element) {
 			utils.CheckErrorCustom("Category or year not found")
 			return 0
 		}
@@ -119,9 +135,9 @@ func StartApplication() {
 		download_ready = VerifyInput(input_list)
 	}
 
-	// Start downloading
-	//DownloadPapers(input_list)
+	//Start downloading papers
+	DownloadPapers(input_list)
 
-	// Disconnect the DB
+	//Disconnect the DB
 	defer db.DisconnectDatabase(database)
 }

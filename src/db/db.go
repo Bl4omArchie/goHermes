@@ -16,9 +16,6 @@ type Database struct {
 	Name string
 }
 
-func InsertPaper() {
-	
-}
 
 func ConnectDatabase() (*Database) {
 	err := godotenv.Load()
