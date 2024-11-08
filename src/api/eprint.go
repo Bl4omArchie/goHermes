@@ -34,21 +34,6 @@ var (
 		"2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999", "1998", "1997", "1996")
 )
 
-
-type Papers struct {
-    Title string
-    Link string
-    Publication_year int
-	Category string
-	File_data string
-}
-
-
-// Insert the given paper into the database
-func StorePdf(paper Papers) {
-
-}
-
 // Download the pdf from the given url
 func GetPdf(url string, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -57,7 +42,7 @@ func GetPdf(url string, wg *sync.WaitGroup) {
 // Retrieve data such as Category and title
 func RetrieveData(url string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	paper := Papers{}
+	paper := db.Papers{}
 
 	resp, err := http.Get(url)
 	utils.CheckError(err)
