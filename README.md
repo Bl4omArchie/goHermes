@@ -31,6 +31,13 @@ Stages :
 2) Download the PDF
 3) store the raw binary in the database
 
+Draw of the process :
+```
+
+Start: GetPapersYear -> For each papers: RetrieveDataPaper -> DownloadPaper -> InsertBinary (into the dabase)
+
+```
+
 First idea :
 - One goroutine for each years
 - A fixed number N of goroutines for stages 1, 2 and 3 <br/>
@@ -45,15 +52,19 @@ More ideas : <br/>
 Basically the same but using a pipeline with channels. A fourth idea idea could be to use custom rating limit with work-stealing queue.
 I shall explore and test those ideas.
 
+
 # Statistics 
 
 In order to anticipate rate limit issue (from hardware or the ePrint server), I decided to make a small analysis of how many request I will need, how many insertion in my database etc
 
 There is the volume of paper for each years :
-```bash
-		"2024":1799, "2023":1971, "2022":1781, "2021":1705, "2020":1620,
-		"2019":1498, "2018":1249, "2017":1262, "2016":1195, "2015":1255, "2014":1029, "2013":881, "2012":733, "2011":714, "2010":660,
-		"2009":638, "2008":545, "2007":482, "2006":485, "2005":469, "2004":375, "2003":265, "2002":195, "2001":113, "2000":69,
-		"1999":24, "1998":26, "1997":15, "1996": 16,
+```
+"2024":1799, "2023":1971, "2022":1781, "2021":1705, "2020":1620,
+"2019":1498, "2018":1249, "2017":1262, "2016":1195, "2015":1255, "2014":1029, "2013":881, "2012":733, "2011":714, "2010":660, 
+"2009":638, "2008":545, "2007":482, "2006":485, "2005":469, "2004":375, "2003":265, "2002":195, "2001":113, "2000":69,
+"1999":24, "1998":26, "1997":15, "1996": 16,
 
 ```
+
+Years between 2014 and 2024 have more than one thousand papers which I consider to be the years who need more goroutines.
+In the other case years, between 1996 and 2013, there is only less than one thousand papers or even a few dozen which means we don't need too much goroutines.

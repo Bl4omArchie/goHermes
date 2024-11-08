@@ -12,7 +12,7 @@ import (
 func main() {
 	var wg1 sync.WaitGroup
 
-	input_list := []string{"2024"}
+	input_list := []string{"1996"}
     wg1.Add(1)
 
 	start := time.Now()
