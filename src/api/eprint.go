@@ -67,8 +67,6 @@ func RetrieveData(url string, wg *sync.WaitGroup) {
 func DownloadPapers(input_list []string) {
 	var wg1 sync.WaitGroup
 
-	url := "https://eprint.iacr.org/"
-
 	start := time.Now()
 	for n_year :=0; n_year<len(input_list); n_year++ {
 		
@@ -99,12 +97,16 @@ func VerifyInput(input []string) int {
 
 func StartApplication() {
 	// Welcome message and database connection
-	fmt.Println("\n\033[34m === Welcome to ePrint PDF download tool ===\033[0m\n")
+	fmt.Println("\033[34m============================================")
+	fmt.Println("=== Welcome to ePrint PDF download tool ===")
+	fmt.Println("============================================\033[0m")
 	database := db.ConnectDatabase()
 	
 	// Option for downloading PDF
-	fmt.Println("| -> Write what years or categories you want to be downloaded below")
-	fmt.Println("| -> Write 'all' to download every PDF\n")
+	fmt.Println("=====================================================================")
+	fmt.Println("= -> Write what years or categories you want to be downloaded below")
+	fmt.Println("= -> Write 'all' to download every PDF")
+	fmt.Println("=====================================================================")
 	
 	// Read the user input and clear it
 	reader := bufio.NewReader(os.Stdin)
