@@ -1,12 +1,65 @@
 package api
 
+import (
+	_ "fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strconv"
+	"github.com/Bl4omArchie/ePrint-DB/src/utils"
+	mapset "github.com/deckarep/golang-set/v2"
+)
+
 var (
-	PapersByYear = map[string]int {
-		"2024":1799, "2023":1971, "2022":1781, "2021":1705, "2020":1620,
-		"2019":1498, "2018":1249, "2017":1262, "2016":1195, "2015":1255, "2014":1029, "2013":881, "2012":733, "2011":714, "2010":660,
-		"2009":638, "2008":545, "2007":482, "2006":485, "2005":469, "2004":375, "2003":265, "2002":195, "2001":113, "2000":69,
-		"1999":24, "1998":26, "1997":15, "1996": 16,
+	Url = "https://eprint.iacr.org/"
+	Url_by_years = "https://eprint.iacr.org/byyear"
+)
+
+type EprintStatistics struct {
+	totalDocuments int				//Total amount of documents
+	papersYear map[string]int		//for each years, the number of documents
+	categories mapset.Set[string]	//an array of every avvailable categories
+	years mapset.Set[string]		//an array of every available years
+}
+
+func CreateStats() (stats EprintStatistics) {
+	stats.totalDocuments = 0
+	stats.papersYear = make(map[string]int)
+	stats.categories = mapset.NewSet[string]()
+	stats.years = mapset.NewSet[string]()
+
+	return stats
+}
+
+func GetStatistics() (stats EprintStatistics) {
+	// get the page where you can find stats we want
+	resp, err := http.Get(Url_by_years)
+	utils.CheckError(err)
+	defer resp.Body.Close()
+
+	// Read the body page
+	body, err := io.ReadAll(resp.Body)
+	utils.CheckError(err)
+
+	// Seek for years a	number of papers per year
+	re := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
+	matches := re.FindAllStringSubmatch(string(body), -1)
+	sum := 0
+	
+	// Create the stat struct
+	stats = CreateStats()
+
+	// Fill the struct
+	for _, match := range matches {
+		if len(match) == 3 {
+			docCount, err := strconv.Atoi(match[2])
+			utils.CheckError(err)
+
+			stats.years.Add(match[1])
+			stats.papersYear[match[1]] = docCount
+			sum += docCount
+		}
 	}
 
-	TotalDocuments = 23069
-)
+	return stats
+}

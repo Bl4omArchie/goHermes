@@ -1,3 +1,4 @@
+-- database: :memory:
 CREATE TABLE Papers
 (
     id SERIAL PRIMARY KEY,

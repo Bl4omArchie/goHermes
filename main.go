@@ -9,4 +9,5 @@ import (
 
 func main() {
 	api.StartApplication()
+	//api.GetStatistics()
 }
