@@ -109,20 +109,13 @@ func CloseApplication(app *Application) {
 }
 
 
-/*
-This function start every features required to make the app works
-1) Get statistics
-2) Connect database
-3) Read command input
-4) Launch features
-*/
 func StartApplication() {
 	// Welcome message
 	fmt.Println("\033[34m============================================")
 	fmt.Println("=== Welcome to ePrint PDF download tool ===")
 	fmt.Println("============================================\033[0m")
 
-	//Load the app
+	//Load the app : database connection, alert listener, update the statistics...
 	app := LoadApplication()
 	
 	// Options you have
@@ -147,7 +140,6 @@ func StartApplication() {
 
 	// Start downloading papers
 	DownloadPapers(app)
-
 
 	// Close application
 	defer CloseApplication(app)
