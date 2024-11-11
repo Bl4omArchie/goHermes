@@ -1,6 +1,6 @@
 # ePrint Database Project
 
-Goal : getting every ePrint papers in a database the fastest as possible.
+Goal : getting every ePrint papers in a database the fastest and the cleaner as possible.
 Later goal : have a nice web UI where you can download PDF from several sources (eprint, NIST...), make refine tuning with ollama or get alerted from new papers.
 
 Technologies :
@@ -58,7 +58,6 @@ I shall explore and test those ideas.
 
 Statistics are the data I need to correctly download the precise amount of papers available on ePrint. For now the code is a bit goofy because I'm doing a request each time the tool is executed for retrieving data such as categories names, number of PDF from past years. Futur improving will be to have a fine strategy for optimizing the number of request and winning time by calling intelligently the website.
 
-The point is to make a generic tool that could 
 
 ## Rate limit issue
 
