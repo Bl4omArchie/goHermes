@@ -1,6 +1,9 @@
 package utils
 
-import "log"
+import (
+	"fmt"
+	"time"
+)
 
 
 type AlertChannel struct {
@@ -12,6 +15,7 @@ type AlertChannel struct {
 type ErrorReport struct {
 	flag int			// See doc below
 	customMsg string	// a custom error message
+	date time.Time
 }
 
 /* 
@@ -61,25 +65,27 @@ func SendAlert(flag int, msg string, ac *AlertChannel) {
 	var er = ErrorReport{
 		flag: flag,
 		customMsg: msg,
+		date: time.Now(),
 	}
 	ac.errorReportList = append(ac.errorReportList, er)
 	ac.channel <- er
 	ac.nbAlerts++
 }
 
+
 func ListenerAlertChannel(ac *AlertChannel) {
     for er := range ac.channel {
-		action := (er.flag >> 6) & 0b11
+		action := er.flag >> 6
 
 		switch action {
 		case 0b10:
-			log.Fatalf("\033[31m[LOG] Crash report: %s\033[0m", er.customMsg)
+			fmt.Printf("Currently, this action is not supported")
 
 		case 0b11:
-			log.Printf("\033[31m[LOG] Flag raised: %s\033[0m", er.customMsg)
+			fmt.Printf("\033[33m[%s/%s/%s] [%s:%s:%s] \033[31m[LOG] Flag raised: %s\033[0m", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
 		
 		default:
-			log.Printf("\033[31m[LOG]: Invalid action\033[0m")
+			fmt.Printf("\033[31m[LOG]: Invalid action\033[0m")
 		}
     }
 }
