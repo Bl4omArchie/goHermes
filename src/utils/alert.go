@@ -2,6 +2,7 @@ package utils
 
 import "log"
 
+
 type AlertChannel struct {
 	channel chan ErrorReport
 	nbAlerts int
@@ -9,18 +10,39 @@ type AlertChannel struct {
 }
 
 type ErrorReport struct {
-	errorFlag int
-	customMsg string
-	action string
+	flag int			// See doc below
+	customMsg string	// a custom error message
 }
 
-/* Errors flags :
-	QuitLister 				 = 0x1
-	ErrorDownloadingDocument = 0x1337
-	ErrorGetPaperData 		 = 0x1338
-	ErrorGetStatistics 		 = 0x1339
-	ErrorInsertingDocument   = 0x1340
-	ErrorConnection			 = 0x1341
+/* 
+A flag is a 8 bits integer representing an error type and an action
+The first 2 bits (from left) is the action. The last 6 bits the flag type.
+
+Flag type :
+	ExitListener 		     = 0b000001
+	ErrorDownloadingDocument = 0b000010
+	ErrorGetPaperData 		 = 0b000011
+	ErrorGetStatistics 		 = 0b000100
+	ErrorInsertingDocument   = 0b000101
+	ErrorConnection			 = 0b000110
+
+Action :
+	ExitProgram 	= 0b10
+	ContinueProgram = 0b11
+
+In practise, you shall used the flag as an hexadecimal value. Here is a board that convert everything in hexadecimal :
+
+| **Flag type**           | **Action quit program** | **Action continue program** |
+|-------------------------|-------------------------|-----------------------------|
+| ExitListener		      | 0x81      		   		| 0xc1                        |
+| ErrorDownloadingDocument| 0x82      		   		| 0xc2                        |
+| ErrorGetPaperData       | 0x83      		   		| 0xc3                        |
+| ErrorGetStatistics      | 0x84      		   		| 0xc4                 		  |
+| ErrorInsertingDocument  | 0x85      		   		| 0xc5                   	  |
+| ErrorConnection         | 0x86      		   		| 0xc6                 	  	  |
+
+Example : I'm downloading a bunch of PDF and one of the url is incorrect (PDF not found). However, I still need to download the remainding PDF.
+In this situation my flag is : 0xc2 (0b10100000 in binary).
 */
 
 func CreateAlertChannel() *AlertChannel {
@@ -35,11 +57,10 @@ func CloseChannel(ac *AlertChannel) {
 	close(ac.channel)
 }
 
-func SendAlert(errorFlag int, message string, action string, ac *AlertChannel) {
+func SendAlert(flag int, msg string, ac *AlertChannel) {
 	var er = ErrorReport{
-		errorFlag: errorFlag,
-		customMsg: message,
-		action: action,
+		flag: flag,
+		customMsg: msg,
 	}
 	ac.errorReportList = append(ac.errorReportList, er)
 	ac.channel <- er
@@ -48,12 +69,14 @@ func SendAlert(errorFlag int, message string, action string, ac *AlertChannel) {
 
 func ListenerAlertChannel(ac *AlertChannel) {
     for er := range ac.channel {
-		switch er.action {
-		case "continue":
-			log.Printf("\033[31m[LOG]: %s\033[0m", er.customMsg)
+		action := (er.flag >> 6) & 0b11
 
-		case "quit":
-			log.Fatalf("\033[31m[LOG]: %s\033[0m", er.customMsg)
+		switch action {
+		case 0b10:
+			log.Fatalf("\033[31m[LOG] Crash report: %s\033[0m", er.customMsg)
+
+		case 0b11:
+			log.Printf("\033[31m[LOG] Flag raised: %s\033[0m", er.customMsg)
 		
 		default:
 			log.Printf("\033[31m[LOG]: Invalid action\033[0m")
