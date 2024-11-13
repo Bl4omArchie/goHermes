@@ -36,30 +36,32 @@ func VerifyInput(app *Application) int {
 }
 
 // Download the pdf from the given url
-func GetPdf(url string, wg *sync.WaitGroup) {
+func GetPdf(url string, wg *sync.WaitGroup, app *Application) {
 	defer wg.Done()
 
 	resp, err := http.Get(url)
-	utils.CheckError(err)
+	utils.CheckAlertError(err, 0xc2, fmt.Sprintf("Downloading has failed for PDF %d", url), &app.ac)
 	defer resp.Body.Close()
   
 }
 
 // Retrieve data such as Category and title
-func GetPaperData(url string, wg *sync.WaitGroup) {
+func GetPaperData(url string, wg *sync.WaitGroup, app *Application) {
 	defer wg.Done()
 	paper := db.Papers{}
 
 	resp, err := http.Get(url)
-	utils.CheckError(err)
+	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to reach page: %d", url), &app.ac)
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	utils.CheckError(err)
+	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to retrieve data for page: %d", url), &app.ac)
 
 	re := regexp.MustCompile(`@misc{cryptoeprint:[^}]+}`)
 	match := re.Find(body)
-	utils.RaiseFlag(match)
+	if len(match) <= 0 {
+		utils.SendAlert(0xc3, fmt.Sprintf("Couldn't find cryptoeprint for PDF %d", url), &app.ac)
+	}
 	
 	re = regexp.MustCompile(`<small class="[^"]+">([^<]+)</small>`)
 	matchCategory := re.FindStringSubmatch(string(body))
@@ -82,8 +84,8 @@ func DownloadPapers(app *Application) {
 			wg_retrieve.Add(1)
 			wg_download.Add(1)
 			
-			go GetPaperData(Url + app.userInput[n_year] + "/" + strconv.Itoa(i), &wg_retrieve)
-			go GetPdf(Url + app.userInput[n_year] + "/" + strconv.Itoa(i) + ".pdf", &wg_download)
+			go GetPaperData(Url + app.userInput[n_year] + "/" + strconv.Itoa(i), &wg_retrieve, app)
+			go GetPdf(Url + app.userInput[n_year] + "/" + strconv.Itoa(i) + ".pdf", &wg_download, app)
 		}
 		wg_retrieve.Wait()
 		wg_download.Wait()

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-
+	"fmt"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -34,12 +34,12 @@ func CreateStats() (stats EprintStatistics) {
 func GetStatistics() (stats EprintStatistics) {
 	// get the page where you can find stats we want
 	resp, err := http.Get(Url_by_years)
-	utils.CheckError(err)
+	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to reach page: %d", Url_by_years), app.ac)
 	defer resp.Body.Close()
 
 	// Read the body page
 	body, err := io.ReadAll(resp.Body)
-	utils.CheckError(err)
+	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to read page: %d", Url_by_years), app.ac)
 
 	// Seek for years and the number of papers per year
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
@@ -56,9 +56,7 @@ func GetStatistics() (stats EprintStatistics) {
 	// Fill the struct with years
 	for _, match := range matches_years {
 		if len(match) == 3 {
-			docCount, err := strconv.Atoi(match[2])
-			utils.CheckError(err)
-
+			docCount, _ := strconv.Atoi(match[2])
 			stats.years.Add(match[1])
 			stats.papersYear[match[1]] = docCount
 			sum += docCount

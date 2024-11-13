@@ -74,3 +74,14 @@ There is the volume of paper for each years :
 
 Years between 2014 and 2024 have more than one thousand papers which I consider to be the years who need more goroutines.
 In the other case years, between 1996 and 2013, there is only less than one thousand papers or even a few dozen which means we don't need too much goroutines.
+
+
+# Alerts
+
+I'm developing an alert system that allows through a channel to communicate errors and failures. For the moment the system is very simple and I still need to make improvements but I'm working hard on designing a good system that handle every situation.
+
+Currently, my system is a predermined set of flags but it is a bit naive. Normally every cased are handle but what if I get an unknow error ? For instance, while I was making my test for downloading with goroutines, I got a rejection from ePrint website. Now I know this error exists but it means I need to anticipate every possible error and also the case where idk what it is.
+
+A second point is the exit action. With my alerts system you can chose if you want to continue your program or quit. This is okay for the moment, but when my program will run with hundred of gouroutines, how am I going to manage the exiting of all those goroutines ?
+
+Finnaly, the third point is about the strategy behind continuing the program even after a failed attempt of downloading a PDF. While I was correcting my code I saw that I was continuing my script in cases where I already knew the url was incorrect. Like a switch case but without break. So the program was running on the same url for nothing. I need to find better way to continue my program and skipping immediatly when an error about wrong url occurs. And even for the rejected connection I was talking about latly: How can I stop temporaly my program, keep thing frozed where I was, wait a bit and then continue like nothing happened ? 
