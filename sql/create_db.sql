@@ -1,5 +1,5 @@
 -- Création de la base de données
-CREATE DATABASE ePrint;
+CREATE DATABASE eprint;
 
 -- Connexion à la base de données nouvellement créée
 \c eprint;

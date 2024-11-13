@@ -17,9 +17,9 @@ type Database struct {
 }
 
 
-func ConnectDatabase() (*Database) {
+func ConnectDatabase(ac *utils.AlertChannel) (*Database) {
 	err := godotenv.Load()
-	utils.SendAlert(0xc6, "Incorrect credential for database.", &app.ac)
+	utils.CheckAlertError(err, 0xc6, "Incorrect credential for database.", ac)
 
 	var (
 		host = os.Getenv("DB_HOST")
@@ -46,8 +46,8 @@ func ConnectDatabase() (*Database) {
     }
 }
 
-func DisconnectDatabase(db *Database) {
+func DisconnectDatabase(ac *utils.AlertChannel, db *Database) {
 	err := db.SqlDatabase.Close()
-	utils.SendAlert(0xc6, "Error while deconnecting.", &app.ac)
+	utils.CheckAlertError(err, 0xc6, "Error while deconnecting.", ac)
 	fmt.Println("\033[32m> Disconnected !\033[0m")
 }
