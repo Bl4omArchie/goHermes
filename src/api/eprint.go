@@ -8,7 +8,6 @@ import (
 	"strings"
 	"fmt"
 	"io"
-	"time"
 	"bufio"
 	"regexp"
 	"net/http"
@@ -75,23 +74,19 @@ func GetPaperData(url string, wg *sync.WaitGroup, app *Application) {
 func DownloadPapers(app *Application) {
 	var wg_retrieve sync.WaitGroup
 	var wg_download sync.WaitGroup
-	
-	start := time.Now()
 
 	for n_year :=0; n_year<len(app.userInput); n_year++ {
 		
 		for i := 1; i <= app.stats.papersYear[app.userInput[n_year]]; i++ {
 			wg_retrieve.Add(1)
 			wg_download.Add(1)
-			
+
 			go GetPaperData(Url + app.userInput[n_year] + "/" + strconv.Itoa(i), &wg_retrieve, app)
 			go GetPdf(Url + app.userInput[n_year] + "/" + strconv.Itoa(i) + ".pdf", &wg_download, app)
 		}
 		wg_retrieve.Wait()
 		wg_download.Wait()
 	}
-
-	fmt.Println("Temps d'exécution:", time.Since(start))
 } 
 
 
@@ -103,6 +98,7 @@ func DownloadPapers(app *Application) {
 */
 func LoadApplication() *Application {
 	ac := *utils.CreateAlertChannel()
+	go utils.ListenerAlertChannel(&ac)
 	stats := *GetStatistics(&ac)
 	storage := *db.ConnectDatabase(&ac)
 

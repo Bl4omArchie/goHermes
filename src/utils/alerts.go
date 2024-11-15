@@ -7,8 +7,9 @@ import (
 
 
 type AlertChannel struct {
-	channel chan ErrorReport
+	active int
 	nbAlerts int
+	channel chan ErrorReport
 	errorReportList []ErrorReport
 }
 
@@ -44,8 +45,9 @@ In this situation my flag is : 0xc2 (0b10100000 in binary).
 
 func CreateAlertChannel() *AlertChannel {
 	return &AlertChannel{
-		channel: make(chan ErrorReport),
+		active: 0,
 		nbAlerts: 0,
+		channel: make(chan ErrorReport),
 		errorReportList: []ErrorReport{},
 	}
 }
@@ -67,18 +69,21 @@ func SendAlert(flag int, msg string, ac *AlertChannel) {
 
 
 func ListenerAlertChannel(ac *AlertChannel) {
+	fmt.Println("[!] Welcome on the flag listener ...")
+	ac.active = 1
+
     for er := range ac.channel {
 		action := er.flag >> 6
 
 		switch action {
 		case 0b10:
-			fmt.Printf("Currently, this action is not supported")
+			fmt.Println("Currently, this action is not supported")
 
 		case 0b11:
-			fmt.Printf("\033[33m[%d/%d/%d] [%d:%d:%d] \033[31m[LOG] Flag raised: %s\033[0m", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
+			fmt.Printf("\033[33m[%d/%d/%d] [%d:%d:%d] \033[31m[LOG] Flag raised: %s\033[0m\n", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
 		
 		default:
-			fmt.Printf("\033[31m[LOG]: Invalid action\033[0m")
+			fmt.Println("\033[31m[LOG]: Invalid action\033[0m")
 		}
     }
 }

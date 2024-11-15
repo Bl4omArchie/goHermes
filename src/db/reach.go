@@ -37,7 +37,7 @@ func ConnectDatabase(ac *utils.AlertChannel) (*Database) {
 	err = db.Ping()
 	utils.CheckErrorQuit(err)
 
-	fmt.Println("\033[32m> Connected !\033[0m\n")
+	fmt.Println("\033[32m> Connected !\033[0m")
 
     return &Database{
         ConnectionChain: psqlconn,
