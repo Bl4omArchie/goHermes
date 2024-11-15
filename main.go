@@ -8,8 +8,7 @@ import (
 
 
 func main() {
-	//api.StartApplication()
-	//api.GetStatistics()
-	api.SimulateAlertChannel()
+	api.StartApplication()
+
 
 }

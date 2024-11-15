@@ -95,29 +95,29 @@ func DownloadPapers(app *Application) {
 } 
 
 
-func LoadApplication() *Application{
+/* Loading the application consist of :
+1- Create the alert channel
+2- Get statistics from ePrint website
+3- Connection to database
+4- Initiate the user input buffer
+*/
+func LoadApplication() *Application {
+	ac := *utils.CreateAlertChannel()
+	stats := *GetStatistics(&ac)
+	storage := *db.ConnectDatabase(&ac)
+
 	return &Application{
-		ac: *utils.CreateAlertChannel(),
-		stats: GetStatistics(),
-		storage: *db.ConnectDatabase(),
+		ac: ac,
+		stats: stats,
+		storage: storage,
 		userInput: []string{},
 	}
 }
 
 
 func CloseApplication(app *Application) {
-	db.DisconnectDatabase(&app.storage)
+	db.DisconnectDatabase(&app.ac, &app.storage)
 	utils.CloseChannel(&app.ac)
-}
-
-
-func SimulateAlertChannel() {
-	ac := utils.CreateAlertChannel()
-	go utils.ListenerAlertChannel(ac)
-	utils.SendAlert(0xc2, "Can't download PDF n°497", ac)
-
-	time.Sleep(2 * time.Second)
-	utils.CloseChannel(ac)
 }
 
 
@@ -131,10 +131,10 @@ func StartApplication() {
 	app := LoadApplication()
 	
 	// Options you have
-	fmt.Println("=====================================================================")
-	fmt.Println("= -> Write what years or categories you want to be downloaded below")
+	fmt.Println("=======================================================")
+	fmt.Println("= -> Write what years you want to be downloaded below")
 	fmt.Println("= -> Write 'all' to download every PDF")
-	fmt.Println("=====================================================================")
+	fmt.Println("=======================================================")
 
 	// Read the user input and clear it
 	reader := bufio.NewReader(os.Stdin)

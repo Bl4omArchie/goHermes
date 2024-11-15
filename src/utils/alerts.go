@@ -14,8 +14,8 @@ type AlertChannel struct {
 
 type ErrorReport struct {
 	flag int			// See doc below
-	customMsg string	// a custom error message
-	date time.Time
+	customMsg string	// A custom error message
+	date time.Time 		// Time when the flag was raised
 }
 
 /* 
@@ -36,14 +36,7 @@ Action :
 
 In practise, you shall used the flag as an hexadecimal value. Here is a board that convert everything in hexadecimal :
 
-| **Flag type**           | **Action quit program** | **Action continue program** |
-|-------------------------|-------------------------|-----------------------------|
-| ExitListener		      | 0x81      		   		| 0xc1                        |
-| ErrorDownloadingDocument| 0x82      		   		| 0xc2                        |
-| ErrorGetPaperData       | 0x83      		   		| 0xc3                        |
-| ErrorGetStatistics      | 0x84      		   		| 0xc4                 		  |
-| ErrorInsertingDocument  | 0x85      		   		| 0xc5                   	  |
-| ErrorConnection         | 0x86      		   		| 0xc6                 	  	  |
+(See errors.md for flags listing)
 
 Example : I'm downloading a bunch of PDF and one of the url is incorrect (PDF not found). However, I still need to download the remainding PDF.
 In this situation my flag is : 0xc2 (0b10100000 in binary).
@@ -82,7 +75,7 @@ func ListenerAlertChannel(ac *AlertChannel) {
 			fmt.Printf("Currently, this action is not supported")
 
 		case 0b11:
-			fmt.Printf("\033[33m[%s/%s/%s] [%s:%s:%s] \033[31m[LOG] Flag raised: %s\033[0m", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
+			fmt.Printf("\033[33m[%d/%d/%d] [%d:%d:%d] \033[31m[LOG] Flag raised: %s\033[0m", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
 		
 		default:
 			fmt.Printf("\033[31m[LOG]: Invalid action\033[0m")

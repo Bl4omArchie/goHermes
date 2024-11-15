@@ -22,24 +22,24 @@ type EprintStatistics struct {
 	years mapset.Set[string]		//an array of every available years
 }
 
-func CreateStats() (stats EprintStatistics) {
-	stats.totalDocuments = 0
-	stats.papersYear = make(map[string]int)
-	stats.categories = mapset.NewSet[string]()
-	stats.years = mapset.NewSet[string]()
-
-	return stats
+func CreateStats() *EprintStatistics {
+	return &EprintStatistics {
+		totalDocuments: 0,
+		papersYear: make(map[string]int),
+		categories: mapset.NewSet[string](),
+		years: mapset.NewSet[string](),
+	}
 }
 
-func GetStatistics() (stats EprintStatistics) {
+func GetStatistics(ac *utils.AlertChannel) *EprintStatistics {
 	// get the page where you can find stats we want
 	resp, err := http.Get(Url_by_years)
-	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to reach page: %d", Url_by_years), app.ac)
+	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to reach page: %d", Url_by_years), ac)
 	defer resp.Body.Close()
 
 	// Read the body page
 	body, err := io.ReadAll(resp.Body)
-	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to read page: %d", Url_by_years), app.ac)
+	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to read page: %d", Url_by_years), ac)
 
 	// Seek for years and the number of papers per year
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
@@ -50,7 +50,7 @@ func GetStatistics() (stats EprintStatistics) {
 	matches_categories := re_categories.FindAllStringSubmatch(string(body), -1)
 	
 	// Create the stat struct
-	stats = CreateStats()
+	stats := CreateStats()
 
 	sum := 0
 	// Fill the struct with years
