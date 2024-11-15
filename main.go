@@ -9,6 +9,4 @@ import (
 
 func main() {
 	api.StartApplication()
-
-
 }

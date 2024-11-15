@@ -40,7 +40,7 @@ func GetPdf(url string, wg *sync.WaitGroup, app *Application) {
 	defer wg.Done()
 
 	resp, err := http.Get(url)
-	utils.CheckAlertError(err, 0xc2, fmt.Sprintf("Downloading has failed for PDF %d", url), &app.ac)
+	utils.CheckAlertError(err, 0xc2, fmt.Sprintf("Downloading has failed for PDF %s", url), &app.ac)
 	defer resp.Body.Close()
   
 }
@@ -51,16 +51,16 @@ func GetPaperData(url string, wg *sync.WaitGroup, app *Application) {
 	paper := db.Papers{}
 
 	resp, err := http.Get(url)
-	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to reach page: %d", url), &app.ac)
+	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to reach page: %s", url), &app.ac)
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to retrieve data for page: %d", url), &app.ac)
+	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to retrieve data for page: %s", url), &app.ac)
 
 	re := regexp.MustCompile(`@misc{cryptoeprint:[^}]+}`)
 	match := re.Find(body)
 	if len(match) <= 0 {
-		utils.SendAlert(0xc3, fmt.Sprintf("Couldn't find cryptoeprint for PDF %d", url), &app.ac)
+		utils.SendAlert(0xc3, fmt.Sprintf("Couldn't find cryptoeprint for PDF %s", url), &app.ac)
 	}
 	
 	re = regexp.MustCompile(`<small class="[^"]+">([^<]+)</small>`)
