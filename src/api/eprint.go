@@ -3,13 +3,13 @@ package api
 
 import (
 	"os"
-	"sync"
-	"strconv"
-	"strings"
-	"fmt"
 	"io"
+	"fmt"
+	"sync"
 	"bufio"
 	"regexp"
+	"strconv"
+	"strings"
 	"net/http"
 	"github.com/Bl4omArchie/ePrint-DB/src/db"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
