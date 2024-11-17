@@ -85,3 +85,9 @@ Currently, my system is a predermined set of flags but it is a bit naive. Normal
 A second point is the exit action. With my alerts system you can chose if you want to continue your program or quit. This is okay for the moment, but when my program will run with hundred of gouroutines, how am I going to manage the exiting of all those goroutines ?
 
 Finnaly, the third point is about the strategy behind continuing the program even after a failed attempt of downloading a PDF. While I was correcting my code I saw that I was continuing my script in cases where I already knew the url was incorrect. Like a switch case but without break. So the program was running on the same url for nothing. I need to find better way to continue my program and skipping immediatly when an error about wrong url occurs. And even for the rejected connection I was talking about latly: How can I stop temporaly my program, keep thing frozed where I was, wait a bit and then continue like nothing happened ? 
+
+
+# Sources 
+- https://medium.com/novai-go-programming-101/running-a-golang-application-with-docker-and-docker-compose-2e8d6ab41bde
+- https://medium.com/@jamal.kaksouri/the-complete-guide-to-context-in-golang-efficient-concurrency-management-43d722f6eaea
+- https://snyk.io/fr/blog/containerizing-go-applications-with-docker/
