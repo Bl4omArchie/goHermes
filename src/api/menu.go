@@ -31,9 +31,9 @@ func VerifyInput(app *Application) int {
 
 func Menu(app *Application) {
 	// Welcome message
-	fmt.Println("\033[34m============================================")
+	fmt.Println("\033[34m===========================================")
 	fmt.Println("=== Welcome to ePrint PDF download tool ===")
-	fmt.Println("============================================\033[0m")
+	fmt.Println("===========================================\033[0m")
 
 	// Options you have
 	fmt.Println("=======================================================")

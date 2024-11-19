@@ -66,4 +66,4 @@ func DownloadPapers(app *Application) {
 		wg_retrieve.Wait()
 		wg_download.Wait()
 	}
-} 
+}

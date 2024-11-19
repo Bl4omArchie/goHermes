@@ -3,10 +3,11 @@ FROM golang:alpine
 
 WORKDIR /usr/local/eprint
 
-COPY . .
+COPY go.mod go.sum ./
 RUN go mod download
+COPY . .
 RUN go build -o eprint
 
-EXPOSE 1337
+EXPOSE 8080
 
 CMD ["./eprint"]
