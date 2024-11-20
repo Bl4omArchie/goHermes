@@ -20,6 +20,8 @@ func GetPdf(url string, wg *sync.WaitGroup, app *Application) {
 	resp, err := http.Get(url)
 	utils.CheckAlertError(err, 0xc2, fmt.Sprintf("Downloading has failed for PDF %s", url), &app.ac)
 	defer resp.Body.Close()
+
+	fmt.Println(resp)
   
 }
 

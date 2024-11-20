@@ -32,12 +32,15 @@ func ConnectDatabase(ac *utils.AlertChannel) (*Database) {
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlconn)
-	utils.CheckErrorQuit(err)
+	if err != nil {
+		utils.SendAlert(0xc6, "opening postgresql failed", ac)
+	}
 
-	err = db.Ping()
-	utils.CheckErrorQuit(err)
-
-	fmt.Println("\033[32m> Connected !\033[0m")
+	if db.Ping() != nil {
+		utils.SendAlert(0xc6, "ping failed", ac)
+	} else {
+		fmt.Println("\033[32m> Connected !\033[0m")
+	}
 
     return &Database{
         ConnectionChain: psqlconn,

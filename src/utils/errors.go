@@ -13,7 +13,7 @@ func CheckErrorQuit(err error) {
 }
 
 
-// check alert with an error
+// check error and raise flag
 func CheckAlertError(err error, flag int, msg string, ac *AlertChannel) {
     if err != nil {
         SendAlert(flag, msg, ac)
