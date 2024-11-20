@@ -22,7 +22,7 @@ type Application struct {
 func VerifyInput(app *Application) int {
 	for _, element := range app.userInput {
 		if !app.stats.years.Contains(element) {
-			utils.SendAlert(0xc4, "Incorrect input. You must use a valid year.", &app.ac)
+			utils.SendAlert(utils.Error_user_input_continue, "Incorrect input. You must use a valid year.", &app.ac)
 			return 0
 		}
 	}

@@ -12,11 +12,13 @@ import (
 type Papers struct {
     Title string
     Link string
-    Publication_year int
+    Publication_year string
 	Category string
 	File_data string
+	File_type string
+	Page_url string
+	Doc_url string
 }
-
 
 
 // Insert the given paper into the database

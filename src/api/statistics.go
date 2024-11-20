@@ -34,12 +34,12 @@ func CreateStats() *EprintStatistics {
 func GetStatistics(ac *utils.AlertChannel) *EprintStatistics {
 	// get the page where you can find stats we want
 	resp, err := http.Get(Url_by_years)
-	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to reach page: %s", Url_by_years), ac)
+	utils.CheckAlertError(err, utils.Error_reach_url_continue, fmt.Sprintf("Failed to reach page: %s", Url_by_years), ac)
 	defer resp.Body.Close()
 
 	// Read the body page
 	body, err := io.ReadAll(resp.Body)
-	utils.CheckAlertError(err, 0xc5, fmt.Sprintf("Failed to read page: %s", Url_by_years), ac)
+	utils.CheckAlertError(err, utils.Error_read_page_content, fmt.Sprintf("Failed to read page: %s", Url_by_years), ac)
 
 	// Seek for years and the number of papers per year
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)

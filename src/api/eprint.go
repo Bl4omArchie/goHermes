@@ -1,84 +1,90 @@
 package api
 
-
 import (
-	"io"
 	"fmt"
-	"sync"
-	"regexp"
-	"strconv"
+	"io"
 	"net/http"
+	"regexp"
+	_ "strconv"
+	"sync"
+	"time"
 	"github.com/Bl4omArchie/ePrint-DB/src/db"
 	"github.com/Bl4omArchie/ePrint-DB/src/utils"
 )
-
 
 // Download the pdf from the given url
 func GetPdf(url string, wg *sync.WaitGroup, app *Application) {
 	defer wg.Done()
 
 	resp, err := http.Get(url)
-	utils.CheckAlertError(err, 0xc2, fmt.Sprintf("Downloading has failed for PDF %s", url), &app.ac)
+	utils.CheckAlertError(err, utils.Error_downloading_document_continue, fmt.Sprintf("Downloading has failed for PDF %s", url), &app.ac)
 	defer resp.Body.Close()
-
-	fmt.Println(resp)
-  
 }
 
 // Retrieve data such as Category and title
-func GetPaperData(url string, wg *sync.WaitGroup, app *Application) {
+func GetPaperData(url string, id int, year string, wg *sync.WaitGroup, app *Application) *db.Papers{
 	defer wg.Done()
 	paper := db.Papers{}
 
+	// Connect to the page
 	resp, err := http.Get(url)
-	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to reach page: %s", url), &app.ac)
+	utils.CheckAlertError(err, utils.Error_reach_url_continue, fmt.Sprintf("Failed to reach page for document: %d", id), &app.ac)
 	defer resp.Body.Close()
-
+	
+	// Read the content
 	body, err := io.ReadAll(resp.Body)
-	utils.CheckAlertError(err, 0xc3, fmt.Sprintf("Failed to retrieve data for page: %s", url), &app.ac)
+	if err != nil {
+		utils.SendAlert(utils.Error_read_page_content, fmt.Sprintf("Failed to retrieve data for document: %d", id), &app.ac)
+	} else {
+		//Get url page and publication year
+		paper.Page_url = url
+		paper.Publication_year = year
 
-	re := regexp.MustCompile(`@misc{cryptoeprint:[^}]+}`)
-	match := re.Find(body)
-	if len(match) <= 0 {
-		utils.SendAlert(0xc3, fmt.Sprintf("Couldn't find cryptoeprint for PDF %s", url), &app.ac)
+		// get title
+		re := regexp.MustCompile(`<title>(.*?)</title>`)
+		matchTitle := re.FindStringSubmatch(string(body))
+		if len(matchTitle) > 1 {
+			paper.Title = matchTitle[1]
+		} else {
+			utils.SendAlert(utils.Error_get_paper_data_continue, fmt.Sprintf("Couldn't find title for document n°%d", id), &app.ac)
+		}
+		
+		// get category
+		re = regexp.MustCompile(`<small class="[^"]+">([^<]+)</small>`)
+		matchCategory := re.FindStringSubmatch(string(body))
+		if len(matchCategory) > 1 {
+			paper.Category = matchCategory[1]
+		} else {
+			utils.SendAlert(utils.Error_get_paper_data_continue, fmt.Sprintf("Couldn't find category for document n°%d", id), &app.ac)
+		}
+		
+		// get doc url
 	}
-	
-	re = regexp.MustCompile(`<small class="[^"]+">([^<]+)</small>`)
-	matchCategory := re.FindStringSubmatch(string(body))
-	
-	if len(matchCategory) > 1 {
-		paper.Category = matchCategory[1]
-	}
+	return &paper
 }
 
 
 /* 
 This function allows you to download papers for each year you want (ie: 2024, 2023)
 
-The goal when you want to download a paper is to:
-1- In a goroutine : retrieve data such as: title, author, link and category...
-2- In a goroutine : download the paper
-
-If a data isn't present in the firsts step, we continue and the data is null
-If the data is marked as withdrawn, we shut down immediatly step 1 and 2
-If the PDF isn't available we shutdown immediatly step 1 and 2
-
-When both steps are completed, the struct Papers is filled and the paper can be inserted in the database.
-
-Note : We still launch step 1 and 2 in concurrence and the first one to raise a critical error shutdown both step.
+Algorithm :
+1- Launch a new goroutine with GetPaperData
+2- Retrieve data such as : authors, category, document extension, document download link
+3- Download the PDF
+4- Store the binary with the retrieved data into the database
 */
 func DownloadPapers(app *Application) {
 	var wg_retrieve sync.WaitGroup
 	var wg_download sync.WaitGroup
 
 	for n_year :=0; n_year<len(app.userInput); n_year++ {
-		
 		for i := 1; i <= app.stats.papersYear[app.userInput[n_year]]; i++ {
 			wg_retrieve.Add(1)
 			wg_download.Add(1)
-
-			go GetPaperData(Url + app.userInput[n_year] + "/" + strconv.Itoa(i), &wg_retrieve, app)
-			go GetPdf(Url + app.userInput[n_year] + "/" + strconv.Itoa(i) + ".pdf", &wg_download, app)
+			
+			go GetPaperData(Url, i, app.userInput[n_year], &wg_retrieve, app)
+			time.Sleep(500)
+			//go GetPdf(Url + app.userInput[n_year] + "/" + strconv.Itoa(i) + ".pdf", &wg_download, app)
 		}
 		wg_retrieve.Wait()
 		wg_download.Wait()

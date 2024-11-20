@@ -33,11 +33,11 @@ func ConnectDatabase(ac *utils.AlertChannel) (*Database) {
 
 	db, err := sql.Open("postgres", psqlconn)
 	if err != nil {
-		utils.SendAlert(0xc6, "opening postgresql failed", ac)
+		utils.SendAlert(utils.Error_connection_db_continue, "opening postgresql failed", ac)
 	}
 
 	if db.Ping() != nil {
-		utils.SendAlert(0xc6, "ping failed", ac)
+		utils.SendAlert(utils.Error_connection_db_continue, "ping failed", ac)
 	} else {
 		fmt.Println("\033[32m> Connected !\033[0m")
 	}
@@ -51,6 +51,9 @@ func ConnectDatabase(ac *utils.AlertChannel) (*Database) {
 
 func DisconnectDatabase(ac *utils.AlertChannel, db *Database) {
 	err := db.SqlDatabase.Close()
-	utils.CheckAlertError(err, 0xc6, "Error while deconnecting.", ac)
-	fmt.Println("\033[32m> Disconnected !\033[0m")
+	if err != nil {
+		utils.SendAlert(utils.Error_deconnection_db_continue, "Error while deconnecting.", ac)
+	} else {
+		fmt.Println("\033[32m> Disconnected !\033[0m")
+	}
 }
