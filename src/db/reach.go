@@ -22,11 +22,11 @@ func ConnectDatabase(ac *utils.AlertChannel) (*Database) {
 	utils.CheckAlertError(err, 0xc6, "Incorrect credential for database.", ac)
 
 	var (
-		host = os.Getenv("DB_HOST")
-		port = os.Getenv("DB_PORT")
-		user = os.Getenv("DB_USER")
-		password = os.Getenv("DB_PASSWORD")
-		dbname = os.Getenv("DB_NAME")
+		host = os.Getenv("HOST")
+		port = os.Getenv("PORT")
+		user = os.Getenv("USER")
+		password = os.Getenv("PASSWORD")
+		dbname = os.Getenv("NAME")
 	)
 
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)

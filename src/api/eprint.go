@@ -49,7 +49,22 @@ func GetPaperData(url string, wg *sync.WaitGroup, app *Application) {
 	}
 }
 
-// Take a list of years (ie: 2024, 2023 ...) and launch the stages of data retrieve and pdf download
+
+/* 
+This function allows you to download papers for each year you want (ie: 2024, 2023)
+
+The goal when you want to download a paper is to:
+1- In a goroutine : retrieve data such as: title, author, link and category...
+2- In a goroutine : download the paper
+
+If a data isn't present in the firsts step, we continue and the data is null
+If the data is marked as withdrawn, we shut down immediatly step 1 and 2
+If the PDF isn't available we shutdown immediatly step 1 and 2
+
+When both steps are completed, the struct Papers is filled and the paper can be inserted in the database.
+
+Note : We still launch step 1 and 2 in concurrence and the first one to raise a critical error shutdown both step.
+*/
 func DownloadPapers(app *Application) {
 	var wg_retrieve sync.WaitGroup
 	var wg_download sync.WaitGroup
