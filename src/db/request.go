@@ -10,6 +10,7 @@ import (
 
 
 type Papers struct {
+	Id int
     Title string
     Link string
     Publication_year string

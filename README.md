@@ -88,8 +88,7 @@ Finnaly, the third point is about the strategy behind continuing the program eve
 
 # Docker image
 
-My docker image is still under development. You can see it as a test.
-
+My docker image is still under development.
 
 # Sources 
 - https://medium.com/novai-go-programming-101/running-a-golang-application-with-docker-and-docker-compose-2e8d6ab41bde
