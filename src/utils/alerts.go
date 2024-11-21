@@ -37,7 +37,7 @@ Action :
 
 In practise, you shall used the flag as an hexadecimal value. Here is a board that convert everything in hexadecimal :
 
-(See errors.md for flags listing)
+(See errors.go for flags listing)
 
 Example : I'm downloading a bunch of PDF and one of the url is incorrect (PDF not found). However, I still need to download the remainding PDF.
 In this situation my flag is : 0xc2 (0b10100000 in binary).
