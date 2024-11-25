@@ -20,6 +20,10 @@ type Papers struct {
 	Doc_url string
 }
 
+// Create the database using sql/create_db.sql
+func CreateDb() {
+	
+}
 
 // Insert the given paper into the database
 func StorePdf(paper Papers) {

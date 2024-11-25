@@ -18,8 +18,14 @@ type Application struct {
 	userInput []string
 }
 
+var (
+	welcome_message = "\033[34m===========================================\n=== Welcome to ePrint PDF download tool ===\n===========================================\033[0m"
+	menu_option = "1- Create database\n2- Download papers\n"
+	download_option = "=======================================================\n= -> Write what years you want to be downloaded below\n= -> Write 'all' to download every PDF\n======================================================="
+)
 
-func VerifyInput(app *Application) int {
+
+func verifyInput(app *Application) int {
 	for _, element := range app.userInput {
 		if !app.stats.years.Contains(element) {
 			utils.SendAlert(utils.Error_user_input_continue, "Incorrect input. You must use a valid year.", &app.ac)
@@ -29,33 +35,25 @@ func VerifyInput(app *Application) int {
 	return 1
 }
 
+func getInput(app *Application) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Enter your input:")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	stringArray := strings.Split(input, " ")
+	fmt.Println(stringArray)
+}
+
 func Menu(app *Application) {
 	// Welcome message
-	fmt.Println("\033[34m===========================================")
-	fmt.Println("=== Welcome to ePrint PDF download tool ===")
-	fmt.Println("===========================================\033[0m")
-
+	fmt.Println(welcome_message)
 	// Options you have
-	fmt.Println("=======================================================")
-	fmt.Println("= -> Write what years you want to be downloaded below")
-	fmt.Println("= -> Write 'all' to download every PDF")
-	fmt.Println("=======================================================")
+	fmt.Println(menu_option)
 
 	// Read the user input and clear it
-	reader := bufio.NewReader(os.Stdin)
-	download_ready := 0
+	getInput(app)
 
-	// Loop until the input is correct
-	for download_ready == 0 {
-		fmt.Print("Enter option: ")
-		text, _ := reader.ReadString('\n')
-		text = strings.TrimSpace(text)
-		app.userInput = strings.Fields(text)
-
-		download_ready = VerifyInput(app)
-	}
-
-	DownloadPapers(app)
+	fmt.Println(app.userInput)
 
 }
 

@@ -77,13 +77,13 @@ func ListenerAlertChannel(ac *AlertChannel) {
 
 		switch action {
 		case 0b10:
-			fmt.Println("Currently, this action is not supported")
+			fmt.Println("\nCurrently, this action is not supported")
 
 		case 0b11:
-			fmt.Printf("\033[33m[%d/%d/%d] [%d:%d:%d] \033[31m[LOG] Flag raised: %s\033[0m\n", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
+			fmt.Printf("\n\033[33m[%d/%d/%d] [%d:%d:%d] \033[31m[LOG] Flag raised: %s\033[0m\n", er.date.Day(), er.date.Month(), er.date.Year(), er.date.Hour(), er.date.Minute(), er.date.Second(), er.customMsg)
 		
 		default:
-			fmt.Println("\033[31m[LOG]: Invalid action\033[0m")
+			fmt.Println("\n\033[31m[LOG]: Invalid action\033[0m")
 		}
     }
 }
