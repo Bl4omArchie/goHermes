@@ -1,26 +1,21 @@
-package api
+package core
 
 import (
 	"io"
 	"net/http"
 	"regexp"
 	"strconv"
-	"fmt"
-	"github.com/Bl4omArchie/ePrint-DB/src/utils"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-var (
-	Url = "https://eprint.iacr.org/"
-	Url_by_years = "https://eprint.iacr.org/byyear"
-)
 
 type EprintStatistics struct {
-	totalDocuments int				//Total amount of documents
-	papersYear map[string]int		//for each years, the number of documents
-	categories mapset.Set[string]	//an array of every avvailable categories
-	years mapset.Set[string]		//an array of every available years
+	totalDocuments int
+	papersYear map[string]int
+	categories mapset.Set[string]
+	years mapset.Set[string]
 }
+
 
 func CreateStats() *EprintStatistics {
 	return &EprintStatistics {
@@ -31,15 +26,14 @@ func CreateStats() *EprintStatistics {
 	}
 }
 
-func GetStatistics(ac *utils.AlertChannel) *EprintStatistics {
+
+func GetStatistics() *EprintStatistics {
 	// get the page where you can find stats we want
-	resp, err := http.Get(Url_by_years)
-	utils.CheckAlertError(err, utils.Error_reach_url_continue, fmt.Sprintf("Failed to reach page: %s", Url_by_years), ac)
+	resp, _ := http.Get(createUrl(endpointByYear, ""))
 	defer resp.Body.Close()
 
 	// Read the body page
-	body, err := io.ReadAll(resp.Body)
-	utils.CheckAlertError(err, utils.Error_read_page_content, fmt.Sprintf("Failed to read page: %s", Url_by_years), ac)
+	body, _ := io.ReadAll(resp.Body)
 
 	// Seek for years and the number of papers per year
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
@@ -49,7 +43,6 @@ func GetStatistics(ac *utils.AlertChannel) *EprintStatistics {
 	re_categories := regexp.MustCompile(`<a href="/search\?category=[^"]+">([^<]+)</a>`)
 	matches_categories := re_categories.FindAllStringSubmatch(string(body), -1)
 	
-	// Create the stat struct
 	stats := CreateStats()
 
 	sum := 0

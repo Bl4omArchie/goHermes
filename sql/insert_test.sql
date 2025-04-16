@@ -1,1 +1,0 @@
-INSERT INTO Papers (title, link, publication_date) VALUES ("Low-Communication Updatable PSI from Asymmetric PSI and PSU", "https://eprint.iacr.org/2024/1712.pdf", "2024")
