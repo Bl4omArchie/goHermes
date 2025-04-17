@@ -10,19 +10,19 @@ import (
 
 
 type EprintStatistics struct {
-	totalDocuments int
-	papersYear map[string]int
-	categories mapset.Set[string]
-	years mapset.Set[string]
+	TotalDocuments int
+	PapersYear map[string]int
+	Categories mapset.Set[string]
+	Years mapset.Set[string]
 }
 
 
 func CreateStats() *EprintStatistics {
 	return &EprintStatistics {
-		totalDocuments: 0,
-		papersYear: make(map[string]int),
-		categories: mapset.NewSet[string](),
-		years: mapset.NewSet[string](),
+		TotalDocuments: 0,
+		PapersYear: make(map[string]int),
+		Categories: mapset.NewSet[string](),
+		Years: mapset.NewSet[string](),
 	}
 }
 
@@ -50,17 +50,17 @@ func GetStatistics() *EprintStatistics {
 	for _, match := range matches_years {
 		if len(match) == 3 {
 			docCount, _ := strconv.Atoi(match[2])
-			stats.years.Add(match[1])
-			stats.papersYear[match[1]] = docCount
+			stats.Years.Add(match[1])
+			stats.PapersYear[match[1]] = docCount
 			sum += docCount
 		}
 	}
-	stats.totalDocuments = sum
+	stats.TotalDocuments = sum
 
 	// Fill the struct with categories
 	for _, match := range matches_categories {
 		if len(match) == 2 {
-			stats.categories.Add(match[1])
+			stats.Categories.Add(match[1])
 		}
 	}
 
