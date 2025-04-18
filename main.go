@@ -19,19 +19,19 @@ func get_header() {
 func get_menu() {
 	fmt.Println("\033[1;33mMenu Options:\033[0m")
 	fmt.Println("\033[1;32m1.\033[0m \033[1;34mDownload papers\033[0m")
-	fmt.Println("\033[1;32m2.\033[0m \033[1;34mReadme\033[0m")
+	fmt.Println("\033[1;32m2.\033[0m \033[1;34mCreate database\033[0m")
 	fmt.Println("\033[1;32m3.\033[0m \033[1;34mQuit\033[0m")
 	fmt.Println("\033[1;33m------------------------------------------------\033[0m")
 }
 
-func get_user_input() int {
+func get_user_input_int() int {
 	var choice int
 	fmt.Print("Enter your choice: ")
 	_, err := fmt.Scan(&choice)
-	
+
 	if err != nil {
 		fmt.Println("Invalid input. Please enter a number.")
-		return get_user_input()
+		return get_user_input_int()
 	}
 	fmt.Print("\n")
 	return choice
@@ -40,15 +40,16 @@ func get_user_input() int {
 func main() {
 	get_header()
 	get_menu()
-	choice := get_user_input()
+	choice := get_user_input_int()
 
 	switch choice {
 		case 1:
-			core.GetDocsPerYears([]string{"2014", "2015"}, "pdf")
+			core.GetDocsPerYears([]string{"2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"}, "pdf")
 		case 2:
-			fmt.Println("Readme selected.")
+			core.CreateDB()
 		case 3:
-			fmt.Println("Quitting...")
+			fmt.Println("Exiting program...")
+			return
 		default:
 			fmt.Println("Invalid choice.")
 	}
