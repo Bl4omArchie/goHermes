@@ -20,7 +20,8 @@ func get_menu() {
 	fmt.Println("\033[1;33mMenu Options:\033[0m")
 	fmt.Println("\033[1;32m1.\033[0m \033[1;34mDownload papers\033[0m")
 	fmt.Println("\033[1;32m2.\033[0m \033[1;34mCreate database\033[0m")
-	fmt.Println("\033[1;32m3.\033[0m \033[1;34mQuit\033[0m")
+	fmt.Println("\033[1;32m3.\033[0m \033[1;34mRead a specific PDF\033[0m")
+	fmt.Println("\033[1;32m4.\033[0m \033[1;34mQuit\033[0m")
 	fmt.Println("\033[1;33m------------------------------------------------\033[0m")
 }
 
@@ -48,6 +49,8 @@ func main() {
 		case 2:
 			core.CreateDB()
 		case 3:
+			core.ReadPDF("pdf/2024/001.pdf")
+		case 4:
 			fmt.Println("Exiting program...")
 			return
 		default:

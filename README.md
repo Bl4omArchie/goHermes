@@ -6,12 +6,12 @@ It stores every PDF into a datalake and apply compression for a better storage.
 # TODO
 In order of priority :
 
-1- Concurrency downloading ✅
+1- Downloading Pool ✅
     1.1- DownloadPool structure ✅
     1.2- Goroutines for download ✅
     1.3- Limit rate to avoid timeout ✅
 
-2- Data parsing 🚧
+2- MetaData Pool 🚧
     2.1- Retrieve authors names
     2.2- Title of the document
     2.3- Category
@@ -26,11 +26,8 @@ In order of priority :
     3.1- reporting missing documents
     3.2- handle error to continue the download
 
+5- License checking
+
 
 Bonus :
 - Progress bar ✅
-
-
-# Workflow
-
-harvest documents -> store the documents -> ingest documents in DB -> update datalake (compression)
