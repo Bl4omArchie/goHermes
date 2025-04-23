@@ -53,7 +53,6 @@ func main() {
 		case 4:
 			fmt.Println("Exiting program...")
 			return
-		default:
 			fmt.Println("Invalid choice.")
 	}
 }
