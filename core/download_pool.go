@@ -6,100 +6,119 @@ Each pool is a step of the pipeline
 === Download pool ===
 
 A download pool is a set of workers that download documents from a website. 
-You can use one or several DownloadPool for one or sereveral websites. Warning : take care of limit rate or banishment from the website.
+You can use one or several DownloadPool for one or several websites. Warning : take care of limit rate or banishment from the website.
 
 =====================
-
 */
 
 import (
 	"net/http"
 	"io"
 	"os"
-	_ "strings"
-	_ "sync"
 	"fmt"
+	"crypto/sha256"
 )
 
-
 type DownloadTask struct {
-	url_metadata string
-	url_download string
-	storage_path string
+	urlMetadata string
+	urlDownload string
+	storagePath string
+}
+
+// TODO : the result struct has to be rework
+type DownloadResult struct {
+	status int
 }
 
 type DownloadPool struct {
 	numWorkers int
 	numTasks int
-	tasks chan DownloadTask
-	results chan bool
+	tasks chan *DownloadTask
+	results chan *DownloadResult
 }
 
 
-func EprintWorker(wid int, dp *DownloadPool, worker_chan *WorkerErrorChannel) {
+func getPage(url string, wid int, wec *WorkerErrorChannel) string {
+	resp, err := http.Get(url)
+	if (err != nil) {
+		CreateWorkerErrorReport(fmt.Sprintf("Error fetching URL %s: %v", url, err), wid, wec)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		CreateWorkerErrorReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), wid, wec)
+		return ""
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		CreateWorkerErrorReport(fmt.Sprintf("Error reading response body for URL %s: %v", url, err),wid, wec)
+		return ""
+	}
+
+	return fmt.Sprintf("%x", data)
+}
+
+func downloadPage(url string, filepath string, wid int, wec *WorkerErrorChannel) string {
+	data := getPage(url, wid, wec)
+	file, err := os.Create(filepath)
+	if err != nil {
+		CreateWorkerErrorReport(fmt.Sprintf("Error creating file %s: %v", filepath, err), wid, wec)
+		return ""
+	}
+	defer file.Close()
+
+	_, err = file.Write([]byte(data))
+	if err != nil {
+		CreateWorkerErrorReport(fmt.Sprintf("Error writing to file %s: %v", filepath, err), wid, wec)
+		return ""
+	}
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		CreateWorkerErrorReport(fmt.Sprintf("Error seeking file %s: %v", filepath, err), wid, wec)
+		return ""
+	}
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		CreateWorkerErrorReport(fmt.Sprintf("failed to compute hash: %v", err), wid, wec)
+		return ""
+	}
+
+	// Convert byte to string
+	return fmt.Sprintf("%x", hasher.Sum(nil))
+}
+
+func EprintWorker(wid int, dp *DownloadPool, wec *WorkerErrorChannel) {
 	for task := range dp.tasks {
-		resp, err := http.Get(task.url_download)
-		if (err != nil) {
-			CreateWorkerErrorReport(
-				fmt.Sprintf("Error fetching URL %s: %v", task.url_download, err),
-				wid, worker_chan,
-			)
-			continue
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			CreateWorkerErrorReport(
-				fmt.Sprintf("Failed to download document %s: status code %d", task.url_download, resp.StatusCode),
-				wid, worker_chan,
-			)
-			continue
-		}
-
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			CreateWorkerErrorReport(
-				fmt.Sprintf("Error reading response body for URL %s: %v", task.url_download, err),
-				wid, worker_chan,
-			)
-			continue
-		}
-
-		file, err := os.Create(task.storage_path)
-		if err != nil {
-			CreateWorkerErrorReport(
-				fmt.Sprintf("Error creating file %s: %v", file, err),
-				wid, worker_chan,
-			)
-			continue
-		}
-		defer file.Close()
-
-		_, err = file.Write(data)
-		if err != nil {
-			CreateWorkerErrorReport(
-				fmt.Sprintf("Error writing to file %s: %v", file, err),
-				wid, worker_chan,
-			)
-			continue
+		data := getPage(task.urlMetadata, wid, wec)
+		if data != "" {
+			hash_pdf := downloadPage(task.urlDownload, task.storagePath, wid, wec)
+			if hash_pdf != "" {
+				dp.results <- &DownloadResult{status: 1}
+			} else {
+				dp.results <- &DownloadResult{status: 0}
+			}
+		} else {
+			dp.results <- &DownloadResult{status: 0}
 		}
 	}
-	dp.results <- true
 }
 
 func CreateDownloadPool(numTasks int, numWorkers int) (*DownloadPool) {
 	return &DownloadPool {
 		numTasks: numTasks,
 		numWorkers: numWorkers,
-		tasks: make(chan DownloadTask),
-		results: make(chan bool),
+		tasks: make(chan *DownloadTask, numTasks),
+		results: make(chan *DownloadResult, numTasks),
 	}
 }
 
-func CreateDownloadTask(url_metadata string, url_download string, storage_path string) (*DownloadTask) {
+func CreateDownloadTask(urlMetadata string, urlDownload string, storagePath string) (*DownloadTask) {
 	return &DownloadTask {
-		url_metadata: url_metadata,
-		url_download: url_download,
-		storage_path: storage_path,
+		urlMetadata: urlMetadata,
+		urlDownload: urlDownload,
+		storagePath: storagePath,
 	}
 }

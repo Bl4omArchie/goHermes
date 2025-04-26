@@ -29,7 +29,7 @@ func CreateStats() *EprintStatistics {
 
 func GetStatistics() *EprintStatistics {
 	// get the page where you can find stats we want
-	resp, err := http.Get(createUrl(endpointByYear, ""))
+	resp, err := http.Get(createUrl([]string{endpointByYear}))
 	if err != nil {
 		return nil
 	}

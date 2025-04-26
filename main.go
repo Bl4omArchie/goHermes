@@ -45,11 +45,11 @@ func main() {
 
 	switch choice {
 		case 1:
-			core.GetDocsPerYears([]string{"2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"}, "pdf")
+			core.GetDocsPerYears([]string{"2011"}, "pdf/")
 		case 2:
 			core.CreateDB()
 		case 3:
-			core.ReadPDF("pdf/2024/001.pdf")
+			fmt.Println("Not implemented...")
 		case 4:
 			fmt.Println("Exiting program...")
 			return

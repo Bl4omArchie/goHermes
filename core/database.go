@@ -8,13 +8,12 @@ import (
 
 type Document struct {
 	Title string
-	Authors []string
-	Download_path string
-	Category string
-	Document_hash string
-	Release_date string
+	Filepath string
+	Hash string
+	Release string
+	License string
+	Source string
 }
-
 
 type Author struct {
 	First_name string
@@ -46,4 +45,15 @@ func CreateDB() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+
+func CreateDocument(title string, filepath string, hash string, release string, license string) (*Document, error) {
+	return &Document{
+		Title:    title,
+		Filepath: filepath,
+		Hash:     hash,
+		Release:  release,
+		License:  license,
+	}, nil
 }
