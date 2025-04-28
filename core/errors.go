@@ -4,21 +4,22 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
-type WorkerErrorReport struct {
+type ErrorReport struct {
 	Message  string
 	WorkerID int
 }
 
-type WorkerErrorChannel struct {
-	wec   chan WorkerErrorReport
+type ErrorChannel struct {
+	wec   chan ErrorReport
 	count int
 	mu    sync.Mutex
 }
 
-func CreateWorkerErrorReport(msg string, wid int, wec *WorkerErrorChannel) {
-	wec.wec <- WorkerErrorReport{
+func CreateErrorReport(msg string, wid int, wec *ErrorChannel) {
+	wec.wec <- ErrorReport{
 		Message:  msg,
 		WorkerID: wid,
 	}
@@ -27,14 +28,23 @@ func CreateWorkerErrorReport(msg string, wid int, wec *WorkerErrorChannel) {
 	wec.mu.Unlock()
 }
 
-func CreateWorkerErrorChannel() *WorkerErrorChannel {
-	return &WorkerErrorChannel{
-		wec:   make(chan WorkerErrorReport),
+func CreateErrorChannel() *ErrorChannel {
+	return &ErrorChannel{
+		wec:   make(chan ErrorReport),
 		count: 0,
 	}
 }
 
-func GenerateLog(wec *WorkerErrorChannel, filePath string) {
+func GenerateLog(wec *ErrorChannel) {
+	if _, err := os.Stat("logs"); os.IsNotExist(err) {
+		err := os.Mkdir("logs", os.ModeDir)
+		if err != nil {
+			fmt.Printf("Error creating logs directory: %v\n", err)
+			return
+		}
+	}
+
+	filePath := fmt.Sprintf("logs/%d.log", time.Now().Unix())
 	file, err := os.Create(filePath)
 	if err != nil {
 		fmt.Printf("Error creating log file: %v\n", err)

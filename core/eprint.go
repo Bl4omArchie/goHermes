@@ -37,8 +37,9 @@ func GetDocsPerYears(years []string, storage_folder string) {
 	}
 
 	// Instantiate error channel and download pool
-	err_workers := CreateWorkerErrorChannel()
+	err_workers := CreateErrorChannel()
 	d_pool := CreateDownloadPool(totalDoc, 10)
+	go GenerateLog(err_workers)
 
 	// Launch workers
     for i := 1; i <= d_pool.numWorkers; i++ {
@@ -51,15 +52,11 @@ func GetDocsPerYears(years []string, storage_folder string) {
 			url_metadata := createUrl([]string{year, fmt.Sprintf("%03d", counter)})
 			url_download := createUrl([]string{year, fmt.Sprintf("%03d.pdf", counter)})
 			d_pool.tasks <- CreateDownloadTask(url_metadata, url_download, storage_folder+"/"+year+"/"+fmt.Sprintf("%03d.pdf", counter))
-			go GenerateLog(err_workers, "report.txt")
 		}
 	}
 	close(d_pool.tasks)
 
     for k := 1; k <= d_pool.numTasks; k++ {
-        result := <-d_pool.results
-        fmt.Printf("Result: %d\n", result.status)
+        _ = <-d_pool.results
     }
-
-	GenerateLog(err_workers, "report.txt")
 }

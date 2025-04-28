@@ -45,7 +45,7 @@ func main() {
 
 	switch choice {
 		case 1:
-			core.GetDocsPerYears([]string{"2011"}, "pdf/")
+			core.GetDocsPerYears([]string{"2009"}, "pdf/")
 		case 2:
 			core.CreateDB()
 		case 3:
