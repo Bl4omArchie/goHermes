@@ -3,7 +3,6 @@ package engine
 
 import (
 	"fmt"
-	"strings"
 	"strconv"
 	"regexp"
 	"github.com/Bl4omArchie/eprint-DB/core/utility"
@@ -18,7 +17,7 @@ var (
 type SourceEprint struct {
 	Name  string
 	Years map[string]int
-	Urls []EprintDocumentToDownload
+	Docs []EprintDocumentToDownload
 	StoragePath string
 }
 
@@ -56,20 +55,22 @@ func (eprint *SourceEprint) CraftUrlProcess(errChannel *utility.ErrorChannel) {
 func (eprint *SourceEprint) DocumentAcquisitionProcess(errChannel *utility.ErrorChannel) {
 	receive_channel := StartDownloadPool(1000, 15, errChannel)
 	
-	for url := range eprint.Urls {
+	for url := range eprint.Docs {
 		GetMetadataEprint(url.UrlMetadata, errChannel)
-		receive_channel <- *DownloadTask{url, "pdf/eprint/212.pdf"}
+		receive_channel <- DownloadTask{url.UrlDownload, "pdf/eprint/212.pdf"}
 	}
 }
 
+
 func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
+	/*
 	data := utility.GetPageContent(url, errChannel)
 	
 	reTitle := regexp.MustCompile(`<title>(.*?)</title>`)
 	reAuthor := regexp.MustCompile(`<meta name="author" content="(.*?)">`)
 	reLicense := regexp.MustCompile(`<meta name="license" content="(.*?)">`)
 
-	authors := []Author{}
+	authors := []database.Author{}
 
 	matchTitle := reTitle.FindStringSubmatch(data)
 	if len(matchTitle) > 1 {
@@ -88,7 +89,7 @@ func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
 			} else {
 				lastName = names[0]
 			}
-			authors = append(authors, Author{
+			authors = append(authors, database.Author{
 				FirstName: firstName,
 				LastName:  lastName,
 			})
@@ -99,6 +100,7 @@ func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
 	if len(matchLicense) > 1 {
 		license := matchLicense[1]
 	}
+	*/
 }
 
 func CreateEprint() (*SourceEprint) {

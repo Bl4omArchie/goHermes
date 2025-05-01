@@ -1,8 +1,9 @@
-package engine
+package data
 
-
+import "gorm.io/gorm"
 
 type Document struct {
+	gorm.Model
 	ID int				`gorm:"primaryKey"`
 	Title string		`gorm:"unique;not null"`
 	Authors []Author	`gorm:"many2many:author_documents;not null"`
@@ -14,6 +15,7 @@ type Document struct {
 }
 
 type Author struct {
+	gorm.Model
 	ID int 					`gorm:"primaryKey"`
 	FirstName string		`gorm:"not null"`
 	LastName string

@@ -27,15 +27,14 @@ func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, er
     }
 }
 
-func StartDownloadPool(numWorkers int, numTasks int, errChannel *utility.ErrorChannel) (chan DownloadResult) {
+func StartDownloadPool(numWorkers int, numTasks int, errChannel *utility.ErrorChannel) (chan DownloadTask) {
     tasks := make(chan DownloadTask, numTasks)
     results := make(chan DownloadResult, numTasks)
 
     for i := 1; i <= numWorkers; i++ {
         go DownloadWorker(tasks, results, errChannel)
     }
-    close(tasks)
-    return results
+    return tasks
 }
 
 func ListenDownloadPool(numTasks int, results <- chan DownloadResult) {
