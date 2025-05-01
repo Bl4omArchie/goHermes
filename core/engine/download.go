@@ -1,9 +1,9 @@
-package corev2
+package engine
 
 
 import (
     "fmt"
-    "time"
+    "github.com/Bl4omArchie/eprint-DB/core/utility"
 )
 
 type DownloadTask struct {
@@ -17,14 +17,17 @@ type DownloadResult struct {
 }
 
 // This worker accept a document url as a task and return the hash of the downloaded document 
-func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, errChannel ErrorChannel) {
+func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, errChannel *utility.ErrorChannel) {
     for task := range tasks {
-		hashResult := DownloadDocumentReturnHash(task, errChannel)
-        results <- hashResult
+		hashResult := utility.DownloadDocumentReturnHash(task.url, task.filepath, errChannel)
+        if hashResult == "" {
+            results <- DownloadResult{status: 0, hash: ""}
+        }
+        results <- DownloadResult{status: 1, hash: hashResult}
     }
 }
 
-func StartDownloadPool(numWorkers int, numTasks int, errChannel ErrorChannel) {
+func StartDownloadPool(numWorkers int, numTasks int, errChannel *utility.ErrorChannel) (chan DownloadResult) {
     tasks := make(chan DownloadTask, numTasks)
     results := make(chan DownloadResult, numTasks)
 
@@ -32,6 +35,7 @@ func StartDownloadPool(numWorkers int, numTasks int, errChannel ErrorChannel) {
         go DownloadWorker(tasks, results, errChannel)
     }
     close(tasks)
+    return results
 }
 
 func ListenDownloadPool(numTasks int, results <- chan DownloadResult) {

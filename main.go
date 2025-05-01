@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/Bl4omArchie/eprint-DB/corev2"
+	"github.com/Bl4omArchie/eprint-DB/core/engine"
+	"github.com/Bl4omArchie/eprint-DB/core/utility"
 )
 
 func getHeader() {

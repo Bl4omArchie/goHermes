@@ -1,4 +1,4 @@
-package corev2
+package utility
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 
 type ErrorReport struct {
 	Message  string
+	Timestamp string
 }
 
 type ErrorChannel struct {
@@ -20,6 +21,7 @@ type ErrorChannel struct {
 func CreateErrorReport(msg string, wec *ErrorChannel) {
 	wec.wec <- ErrorReport{
 		Message:  msg,
+		Timestamp: time.Now().Format(time.RFC850),
 	}
 	wec.mu.Lock()
 	wec.count++
@@ -42,7 +44,7 @@ func ListenerLogFile(wec *ErrorChannel) {
 		}
 	}
 
-	filePath := fmt.Sprintf("logs/%d.log", time.Now().Unix())
+	filePath := fmt.Sprintf("logs/erros_%d.log", time.Now().Unix())
 	file, err := os.Create(filePath)
 	if err != nil {
 		fmt.Printf("Error creating log file: %v\n", err)
@@ -51,7 +53,7 @@ func ListenerLogFile(wec *ErrorChannel) {
 	defer file.Close()
 
 	for errReport := range wec.wec {
-		logEntry := fmt.Sprintf("Message: %s\n", errReport.Message)
+		logEntry := fmt.Sprintf("%s : %s\n", errReport.Timestamp, errReport.Message)
 		_, err := file.WriteString(logEntry)
 		if err != nil {
 			fmt.Printf("Error writing to log file: %v\n", err)

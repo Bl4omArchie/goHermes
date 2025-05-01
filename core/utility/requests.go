@@ -1,4 +1,4 @@
-package corev2
+package utility
 
 import (
 	"crypto/sha256"
@@ -9,34 +9,26 @@ import (
 )
 
 
-func CreateUrl(endpoints []string) string {
-	base := baseURL
-	for _, endpoint := range endpoints {
-		base += "/" + endpoint
-	}
-	return base
-}
-
 func GetPageContent(url string, errChann *ErrorChannel) string {
 	resp, err := http.Get(url)
 	if (err != nil) {
 		CreateErrorReport(fmt.Sprintf("Error fetching URL %s: %v", url, err), errChann)
-		return nil
+		return ""
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		CreateErrorReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), errChann)
-		return nil
+		return ""
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		CreateErrorReport(fmt.Sprintf("Error reading response body for URL %s: %v", url, err), errChann)
-		return nil
+		return ""
 	}
 
-	return fmt.Sprintf("%x", data), err
+	return fmt.Sprintf("%x", data)
 }
 
 func DownloadDocumentReturnHash(url string, filepath string, errChann *ErrorChannel) string {
