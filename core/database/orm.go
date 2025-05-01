@@ -25,12 +25,3 @@ func MigrateSqliteDatabase(db *gorm.DB, errChannel *utility.ErrorChannel, models
 	}
 	return nil
 }
-
-func CreateSqliteDatabase(db *gorm.DB, errChannel *utility.ErrorChannel, models ...any) error {
-	err := db.Create(models...)
-	if err != nil {
-		utility.CreateErrorReport("Base creation failed", errChannel)
-		return err
-	}
-	return nil
-}

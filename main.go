@@ -30,18 +30,18 @@ func getMenu() {
 func main() {
 	getHeader()
 	getMenu()
-	choice := GetIntegerInput()
+	choice := utility.GetIntegerInput("Input your option : ")
 
 	switch choice {
 		case 1:
-			corev2.StartEngine()
+			engine.StartEngine()
 		case 2:
 			fmt.Println("Not implemented...")
 		case 3:
 			fmt.Println("Not implemented...")
 		case 4:
 			fmt.Println("Exiting program...")
-			return
-			fmt.Println("Invalid choice.")
+		default:
+			fmt.Println("Invalid option")
 	}
 }

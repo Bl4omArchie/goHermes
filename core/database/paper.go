@@ -1,4 +1,5 @@
-package data
+package database
+
 
 import "gorm.io/gorm"
 
