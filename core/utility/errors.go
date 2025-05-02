@@ -1,4 +1,4 @@
-package core
+package utility
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 type ErrorReport struct {
 	Message  string
-	WorkerID int
+	Timestamp string
 }
 
 type ErrorChannel struct {
@@ -18,10 +18,10 @@ type ErrorChannel struct {
 	mu    sync.Mutex
 }
 
-func CreateErrorReport(msg string, wid int, wec *ErrorChannel) {
+func CreateErrorReport(msg string, wec *ErrorChannel) {
 	wec.wec <- ErrorReport{
 		Message:  msg,
-		WorkerID: wid,
+		Timestamp: time.Now().Format(time.RFC850),
 	}
 	wec.mu.Lock()
 	wec.count++
@@ -35,7 +35,7 @@ func CreateErrorChannel() *ErrorChannel {
 	}
 }
 
-func GenerateLog(wec *ErrorChannel) {
+func ListenerLogFile(wec *ErrorChannel) {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
 		err := os.Mkdir("logs", os.ModeDir)
 		if err != nil {
@@ -44,7 +44,7 @@ func GenerateLog(wec *ErrorChannel) {
 		}
 	}
 
-	filePath := fmt.Sprintf("logs/%d.log", time.Now().Unix())
+	filePath := fmt.Sprintf("logs/erros_%d.log", time.Now().Unix())
 	file, err := os.Create(filePath)
 	if err != nil {
 		fmt.Printf("Error creating log file: %v\n", err)
@@ -53,7 +53,7 @@ func GenerateLog(wec *ErrorChannel) {
 	defer file.Close()
 
 	for errReport := range wec.wec {
-		logEntry := fmt.Sprintf("WorkerID: %d, Message: %s\n", errReport.WorkerID, errReport.Message)
+		logEntry := fmt.Sprintf("%s : %s\n", errReport.Timestamp, errReport.Message)
 		_, err := file.WriteString(logEntry)
 		if err != nil {
 			fmt.Printf("Error writing to log file: %v\n", err)
