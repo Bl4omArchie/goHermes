@@ -4,7 +4,7 @@ package engine
 import "github.com/Bl4omArchie/eprint-DB/core/utility"
 
 type Source interface {
-	ArgsAcquisitionProcess() []string
+	ScopeDefinitionProcess() []string
 	CraftUrlProcess() []string
 	DocumentAcquisitionProcess() []string
 }
@@ -14,11 +14,11 @@ func StartEngine() {
 	errChannel := utility.CreateErrorChannel()
 	go utility.ListenerLogFile(errChannel)
 
-	/*
+	sources := []Source{CreateEprint(), CreateNist()}
+
 	for source := range sources {
-		source.ArgsAcquisitionProcess(errChannel)
+		source.ScopeDefinitionProcess(errChannel)
 		source.CraftUrlProcess(errChannel)
 		go source.DocumentAcquisitionProcess(errChannel)
 	}
-	*/
 }

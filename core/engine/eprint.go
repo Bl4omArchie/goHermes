@@ -1,24 +1,30 @@
 package engine
 
-
 import (
 	"fmt"
-	"strconv"
 	"regexp"
+	"strconv"
+
 	"github.com/Bl4omArchie/eprint-DB/core/utility"
 )
 
 var (
 	baseURL           = "https://eprint.iacr.org"
-	endpointComplete  = "complete"
-	endpointByYear    = "byyear"
+	endPointComplete  = "complete"
+	endPointByYear    = "byyear"
 )
 
 type SourceEprint struct {
 	Name  string
-	Years map[string]int
+	SourceStoragePath string
 	Docs []EprintDocumentToDownload
-	StoragePath string
+	Scope EprintScope
+}
+
+type EprintScope struct {
+	TotalDocuments int
+	PapersByYear map[string]int
+	Categories []string
 }
 
 type EprintDocumentToDownload struct {
@@ -27,40 +33,51 @@ type EprintDocumentToDownload struct {
 	Filepath string
 }
 
-// AAP : acquire years for ePrint source
-func (eprint *SourceEprint) ArgsAcquisitionProcess(errChannel *utility.ErrorChannel) {
-	eprint.Years = map[string]int{"2025": 500}
+// SDP : for a given source, target the required papers in a Scope.
+func (eprint *SourceEprint) ScopeDefinitionProcess(years []string, errChannel *utility.ErrorChannel) {
+	body := utility.GetPageContent(baseURL + "/" + endPointByYear, errChannel)
+
+	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
+	matches_years := re_years.FindAllStringSubmatch(string(body), -1)
+	
+	// Seek for categories
+	re_categories := regexp.MustCompile(`<a href="/search\?category=[^"]+">([^<]+)</a>`)
+	matches_categories := re_categories.FindAllStringSubmatch(string(body), -1)
+
+	sum := 0
+	// Fill the struct with years
+	for _, match := range matches_years {
+		if len(match) == 3 {
+			docCount, _ := strconv.Atoi(match[2])
+			eprint.Scope.PapersByYear[match[1]] = docCount
+			sum += docCount
+		}
+	}
+	eprint.Scope.TotalDocuments = sum
+
+	// Fill the struct with categories
+	for _, match := range matches_categories {
+		if len(match) == 2 {
+			eprint.Scope.Categories = append(eprint.Scope.Categories, match[1])
+		}
+	}
 }
 
 // CUP : craft every requested urls to download documents of one source
 func (eprint *SourceEprint) CraftUrlProcess(errChannel *utility.ErrorChannel) {
-	body := utility.GetPageContent(endpointByYear, errChannel)
-
-	// Seek for years and the number of papers per year
-	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
-	matches_years := re_years.FindAllStringSubmatch(string(body), -1)
-
-	urlsResult := map[string]int {}
-	for _, match := range matches_years {
-		if len(match) == 3{
-			stat, _:= strconv.Atoi(match[2])
-			urlsResult[match[1]] = stat
-		}
+	docCount := 0
+	for yearScope := range eprint.Scope.PapersByYear {
+		eprint.Docs = append(eprint.Docs, *CreateDocumentToDownload(baseURL, yearScope, string(docCount)))
 	}
-
-	fmt.Println(urlsResult)
 }
 
 // DAP : receive every urls from CUP and fill data structure
 func (eprint *SourceEprint) DocumentAcquisitionProcess(errChannel *utility.ErrorChannel) {
-	receive_channel := StartDownloadPool(1000, 15, errChannel)
+	_ = StartDownloadPool(1000, 15, errChannel)
 	
-	for url := range eprint.Docs {
-		GetMetadataEprint(url.UrlMetadata, errChannel)
-		receive_channel <- DownloadTask{url.UrlDownload, "pdf/eprint/212.pdf"}
-	}
+	fmt.Printf(eprint.Name)
+	fmt.Print(len(eprint.Docs))
 }
-
 
 func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
 	/*
@@ -106,6 +123,25 @@ func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
 func CreateEprint() (*SourceEprint) {
 	return &SourceEprint {
 		Name: "eprint",
-		StoragePath: "pdf/eprint/",
+		SourceStoragePath: "pdf/eprint/",
+		Docs: []EprintDocumentToDownload{},
+		Scope: *CreateEprintScope(),
+	}
+}
+
+func CreateEprintScope() (*EprintScope) {
+	return &EprintScope {
+		TotalDocuments: 0,
+		PapersByYear: map[string]int{},
+		Categories: []string{},
+	}
+}
+
+func CreateDocumentToDownload(url string, year string, paperId string) (*EprintDocumentToDownload) {
+	endpoint := year + "/" + paperId + "/" + ".pdf"
+	return &EprintDocumentToDownload{
+		UrlMetadata: url,
+		UrlDownload: url + endpoint,
+		Filepath: "pdf/eprint/" +  endpoint,
 	}
 }

@@ -12,6 +12,6 @@ type SourceNist struct {
 func CreateNist() (*SourceEprint) {
 	return &SourceEprint {
 		Name: "NIST",
-		StoragePath: "pdf/nist/",
+		SourceStoragePath: "pdf/nist/",
 	}
 }
