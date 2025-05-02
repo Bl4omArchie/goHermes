@@ -19,7 +19,7 @@ type DownloadResult struct {
 // This worker accept a document url as a task and return the hash of the downloaded document 
 func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, errChannel *utility.ErrorChannel) {
     for task := range tasks {
-		hashResult := utility.DownloadDocumentReturnHash(task.url, task.filepath, errChannel)
+		hashResult, _ := utility.DownloadDocumentReturnHash(task.url, task.filepath, errChannel)
         if hashResult == "" {
             results <- DownloadResult{status: 0, hash: ""}
         }

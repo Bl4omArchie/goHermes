@@ -2,16 +2,16 @@ package engine
 
 import (
 	"fmt"
+	_ "fmt"
 	"regexp"
 	"strconv"
-
 	"github.com/Bl4omArchie/eprint-DB/core/utility"
 )
 
 var (
 	baseURL           = "https://eprint.iacr.org"
-	endPointComplete  = "complete"
-	endPointByYear    = "byyear"
+	endPointComplete  = "/complete"
+	endPointByYear    = "/byyear"
 )
 
 type SourceEprint struct {
@@ -34,8 +34,8 @@ type EprintDocumentToDownload struct {
 }
 
 // SDP : for a given source, target the required papers in a Scope.
-func (eprint *SourceEprint) ScopeDefinitionProcess(years []string, errChannel *utility.ErrorChannel) {
-	body := utility.GetPageContent(baseURL + "/" + endPointByYear, errChannel)
+func (eprint *SourceEprint) ScopeDefinitionProcess(errChannel *utility.ErrorChannel) {
+	body, _ := utility.GetPageContent(baseURL + endPointByYear, errChannel)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(string(body), -1)
@@ -65,18 +65,24 @@ func (eprint *SourceEprint) ScopeDefinitionProcess(years []string, errChannel *u
 
 // CUP : craft every requested urls to download documents of one source
 func (eprint *SourceEprint) CraftUrlProcess(errChannel *utility.ErrorChannel) {
-	docCount := 0
-	for yearScope := range eprint.Scope.PapersByYear {
-		eprint.Docs = append(eprint.Docs, *CreateDocumentToDownload(baseURL, yearScope, string(docCount)))
+	fmt.Println(eprint.Scope.PapersByYear)
+	for year, papersYears := range eprint.Scope.PapersByYear {
+		docCountYear := 0
+		for i := 0; i < papersYears; i++ {
+			docCountYear++
+			eprint.Docs = append(eprint.Docs, *CreateDocumentToDownload(baseURL, year, strconv.Itoa(docCountYear)))
+		}
 	}
 }
 
 // DAP : receive every urls from CUP and fill data structure
 func (eprint *SourceEprint) DocumentAcquisitionProcess(errChannel *utility.ErrorChannel) {
-	_ = StartDownloadPool(1000, 15, errChannel)
+	receive_channel := StartDownloadPool(eprint.Scope.TotalDocuments, 15, errChannel)
 	
-	fmt.Printf(eprint.Name)
-	fmt.Print(len(eprint.Docs))
+	for _, url := range eprint.Docs {
+		GetMetadataEprint(url.UrlMetadata, errChannel)
+		receive_channel <- DownloadTask{url.UrlDownload, url.Filepath}
+	}
 }
 
 func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
@@ -138,7 +144,7 @@ func CreateEprintScope() (*EprintScope) {
 }
 
 func CreateDocumentToDownload(url string, year string, paperId string) (*EprintDocumentToDownload) {
-	endpoint := year + "/" + paperId + "/" + ".pdf"
+	endpoint := year + "/" + paperId + ".pdf"
 	return &EprintDocumentToDownload{
 		UrlMetadata: url,
 		UrlDownload: url + endpoint,

@@ -4,9 +4,9 @@ package engine
 import "github.com/Bl4omArchie/eprint-DB/core/utility"
 
 type Source interface {
-	ScopeDefinitionProcess() []string
-	CraftUrlProcess() []string
-	DocumentAcquisitionProcess() []string
+	ScopeDefinitionProcess(errChan *utility.ErrorChannel)
+	CraftUrlProcess(errChan *utility.ErrorChannel)
+	DocumentAcquisitionProcess(errChan *utility.ErrorChannel)
 }
 
 // Main function that start the PDF scrapping
@@ -14,11 +14,11 @@ func StartEngine() {
 	errChannel := utility.CreateErrorChannel()
 	go utility.ListenerLogFile(errChannel)
 
-	sources := []Source{CreateEprint(), CreateNist()}
+	sources := []Source{CreateEprint()}
 
-	for source := range sources {
+	for _, source := range sources {
 		source.ScopeDefinitionProcess(errChannel)
 		source.CraftUrlProcess(errChannel)
-		go source.DocumentAcquisitionProcess(errChannel)
+		source.DocumentAcquisitionProcess(errChannel)
 	}
 }

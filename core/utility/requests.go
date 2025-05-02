@@ -9,54 +9,54 @@ import (
 )
 
 
-func GetPageContent(url string, errChann *ErrorChannel) string {
+func GetPageContent(url string, errChann *ErrorChannel) ([]byte, error) {
 	resp, err := http.Get(url)
 	if (err != nil) {
 		CreateErrorReport(fmt.Sprintf("Error fetching URL %s: %v", url, err), errChann)
-		return ""
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		CreateErrorReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), errChann)
-		return ""
+		return nil, err
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		CreateErrorReport(fmt.Sprintf("Error reading response body for URL %s: %v", url, err), errChann)
-		return ""
+		return nil, err
 	}
 
-	return fmt.Sprintf("%x", data)
+	return data, nil
 }
 
-func DownloadDocumentReturnHash(url string, filepath string, errChann *ErrorChannel) string {
-	data := GetPageContent(url, errChann)
+func DownloadDocumentReturnHash(url string, filepath string, errChann *ErrorChannel) (string, error) {
+	data, _ := GetPageContent(url, errChann)
 	file, err := os.Create(filepath)
 	if err != nil {
 		CreateErrorReport(fmt.Sprintf("Error creating file %s: %v", filepath, err), errChann)
-		return ""
+		return "", err
 	}
 	defer file.Close()
 
 	_, err = file.Write([]byte(data))
 	if err != nil {
 		CreateErrorReport(fmt.Sprintf("Error writing to file %s: %v", filepath, err), errChann)
-		return ""
+		return "", err
 	}
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		CreateErrorReport(fmt.Sprintf("Error seeking file %s: %v", filepath, err), errChann)
-		return ""
+		return "", err
 	}
 
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {
 		CreateErrorReport(fmt.Sprintf("failed to compute hash: %v", err), errChann)
-		return ""
+		return "", err
 	}
 
 	// Convert byte to string
-	return fmt.Sprintf("%x", hasher.Sum(nil))
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
