@@ -2,6 +2,7 @@ package utility
 
 import (
 	"crypto/sha256"
+	"path/filepath"
 	"net/http"
 	"fmt"
 	"io"
@@ -31,23 +32,29 @@ func GetPageContent(url string, errChann *ErrorChannel) ([]byte, error) {
 	return data, nil
 }
 
-func DownloadDocumentReturnHash(url string, filepath string, errChann *ErrorChannel) (string, error) {
+func DownloadDocumentReturnHash(url string, filePath string, errChann *ErrorChannel) (string, error) {
 	data, _ := GetPageContent(url, errChann)
-	file, err := os.Create(filepath)
+
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+		CreateErrorReport(fmt.Sprintf("Error creating directories for %s: %v", filePath, err), errChann)
+		return "", err
+	}
+
+	file, err := os.Create(filePath)
 	if err != nil {
-		CreateErrorReport(fmt.Sprintf("Error creating file %s: %v", filepath, err), errChann)
+		CreateErrorReport(fmt.Sprintf("Error creating file %s: %v", filePath, err), errChann)
 		return "", err
 	}
 	defer file.Close()
 
 	_, err = file.Write([]byte(data))
 	if err != nil {
-		CreateErrorReport(fmt.Sprintf("Error writing to file %s: %v", filepath, err), errChann)
+		CreateErrorReport(fmt.Sprintf("Error writing to file %s: %v", filePath, err), errChann)
 		return "", err
 	}
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		CreateErrorReport(fmt.Sprintf("Error seeking file %s: %v", filepath, err), errChann)
+		CreateErrorReport(fmt.Sprintf("Error seeking file %s: %v", filePath, err), errChann)
 		return "", err
 	}
 

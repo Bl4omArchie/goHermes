@@ -3,6 +3,7 @@ package database
 
 import "gorm.io/gorm"
 
+
 type Document struct {
 	gorm.Model
 	ID int				`gorm:"primaryKey"`

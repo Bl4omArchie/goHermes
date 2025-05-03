@@ -46,7 +46,7 @@ func CreateLogFile() (*os.File) {
 		}
 	}
 
-	filePath := fmt.Sprintf("logs/erros_%d.log", time.Now().Unix())
+	filePath := fmt.Sprintf("logs/error_%d.log", time.Now().Unix())
 	logfile, err := os.Create(filePath)
 	if err != nil {
 		fmt.Printf("Error creating log file: %v\n", err)
