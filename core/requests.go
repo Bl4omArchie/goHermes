@@ -1,4 +1,5 @@
-package utility
+package core
+
 
 import (
 	"crypto/sha256"
@@ -10,26 +11,26 @@ import (
 )
 
 
-func GetPageContent(url string, errChann *ErrorChannel) ([]byte, error) {
+func GetPageContent(url string, errChann *ErrorChannel) (string, error) {
 	resp, err := http.Get(url)
 	if (err != nil) {
 		CreateErrorReport(fmt.Sprintf("Error fetching URL %s: %v", url, err), errChann)
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		CreateErrorReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), errChann)
-		return nil, err
+		return "", err
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		CreateErrorReport(fmt.Sprintf("Error reading response body for URL %s: %v", url, err), errChann)
-		return nil, err
+		return "", err
 	}
 
-	return data, nil
+	return fmt.Sprintf("%x", data), nil
 }
 
 func DownloadDocumentReturnHash(url string, filePath string, errChann *ErrorChannel) (string, error) {

@@ -1,20 +1,21 @@
-package engine
+package core
 
 
 import (
     _ "fmt"
     "sync"
-    "github.com/Bl4omArchie/eprint-DB/core/utility"
 )
 
 type DownloadTask struct {
     url string
     filepath string
+    taskId int
 }
 
 type DownloadResult struct {
     status int
     hash string
+    taskId int
 }
 
 type DownloadPool struct {
@@ -24,18 +25,18 @@ type DownloadPool struct {
 }
 
 // This worker accept a document url as a task and return the hash of the downloaded document 
-func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, errChannel *utility.ErrorChannel) {
+func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, errChannel *ErrorChannel) {
     for task := range tasks {
-		hashResult, _ := utility.DownloadDocumentReturnHash(task.url, task.filepath, errChannel)
+		hashResult, _ := DownloadDocumentReturnHash(task.url, task.filepath, errChannel)
         if hashResult == "" {
-            results <- DownloadResult{status: 0, hash: ""}
+            results <- DownloadResult{status: 0, hash: "", taskId: task.taskId}
         } else {
-            results <- DownloadResult{status: 1, hash: hashResult}
+            results <- DownloadResult{status: 1, hash: hashResult, taskId: task.taskId}
         }
     }
 }
 
-func StartDownloadPool(numWorkers int, errChannel *utility.ErrorChannel) *DownloadPool {
+func StartDownloadPool(numWorkers int, errChannel *ErrorChannel) *DownloadPool {
     tasks := make(chan DownloadTask)
     results := make(chan DownloadResult)
     var wg sync.WaitGroup

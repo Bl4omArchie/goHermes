@@ -1,4 +1,4 @@
-package utility
+package core
 
 import (
 	"fmt"
@@ -14,22 +14,22 @@ type ErrorReport struct {
 
 type ErrorChannel struct {
 	logfile *os.File
-	wec   chan ErrorReport
+	errChannel chan ErrorReport
 	count atomic.Uint32
 }
 
-func CreateErrorReport(msg string, wec *ErrorChannel) {
-	wec.wec <- ErrorReport{
+func CreateErrorReport(msg string, errChannel *ErrorChannel) {
+	errChannel.errChannel <- ErrorReport{
 		Message:  msg,
 		Timestamp: time.Now().Format(time.RFC850),
 	}
-	wec.count.Add(1)
+	errChannel.count.Add(1)
 }
 
 func CreateErrorChannel() *ErrorChannel {
 	return &ErrorChannel{
 		logfile: CreateLogFile(),
-		wec:   make(chan ErrorReport),
+		errChannel:   make(chan ErrorReport),
 		count: atomic.Uint32{},
 	}
 }
@@ -53,7 +53,7 @@ func CreateLogFile() (*os.File) {
 }
 
 func ListenerLogFile(errChannel *ErrorChannel) {
-	for errReport := range errChannel.wec {
+	for errReport := range errChannel.errChannel {
 		logEntry := fmt.Sprintf("%s : %s\n", errReport.Timestamp, errReport.Message)
 		_, err := errChannel.logfile.WriteString(logEntry)
 		if err != nil {
