@@ -5,6 +5,8 @@ import (
 	_ "fmt"
 	"regexp"
 	"strconv"
+	"strings"
+	"github.com/Bl4omArchie/eprint-DB/core/database"
 	"github.com/Bl4omArchie/eprint-DB/core/utility"
 )
 
@@ -31,7 +33,10 @@ type EprintDocumentToDownload struct {
 	UrlMetadata string
 	UrlDownload string
 	Filepath string
+	Doc database.Document
+	Authors database.Author
 }
+
 
 // SDP : for a given source, target the required papers in a Scope.
 func (eprint *SourceEprint) ScopeDefinitionProcess(errChannel *utility.ErrorChannel) {
@@ -79,9 +84,9 @@ func (eprint *SourceEprint) DocumentAcquisitionProcess(errChannel *utility.Error
 	dp := StartDownloadPool(15, errChannel)
 	
 	go func() {
-		for _, url := range eprint.Docs {
-			GetMetadataEprint(url.UrlMetadata, errChannel)
-			dp.tasks <- DownloadTask{url.UrlDownload, url.Filepath}
+		for _, docTodo := range eprint.Docs {
+			GetMetadataEprint(&docTodo, errChannel)
+			dp.tasks <- DownloadTask{docTodo.UrlDownload, url.Filepath}
 		}
 		close(dp.tasks)
 	}()
@@ -91,19 +96,16 @@ func (eprint *SourceEprint) DocumentAcquisitionProcess(errChannel *utility.Error
 	}
 }
 
-func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
-	/*
-	data := utility.GetPageContent(url, errChannel)
+func GetMetadataEprint(docTodo *EprintDocumentToDownload, errChannel *utility.ErrorChannel) {
+	data, _ := utility.GetPageContent(docTodo.UrlMetadata, errChannel)
 	
 	reTitle := regexp.MustCompile(`<title>(.*?)</title>`)
 	reAuthor := regexp.MustCompile(`<meta name="author" content="(.*?)">`)
 	reLicense := regexp.MustCompile(`<meta name="license" content="(.*?)">`)
 
-	authors := []database.Author{}
-
 	matchTitle := reTitle.FindStringSubmatch(data)
 	if len(matchTitle) > 1 {
-		title := matchTitle[1]
+		docTodo.Doc.Title = matchTitle[1]
 	}
 
 	matchAuthors := reAuthor.FindAllStringSubmatch(data, -1)
@@ -118,7 +120,7 @@ func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
 			} else {
 				lastName = names[0]
 			}
-			authors = append(authors, database.Author{
+			docTodo.Doc.Authors = append(docTodo.Doc.Authors, database.Author{
 				FirstName: firstName,
 				LastName:  lastName,
 			})
@@ -127,9 +129,8 @@ func GetMetadataEprint(url string, errChannel *utility.ErrorChannel) {
 
 	matchLicense := reLicense.FindStringSubmatch(data)
 	if len(matchLicense) > 1 {
-		license := matchLicense[1]
+		docTodo.Doc.License = matchLicense[1]
 	}
-	*/
 }
 
 func CreateEprint() (*SourceEprint) {

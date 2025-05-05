@@ -3,6 +3,7 @@ package engine
 
 import "github.com/Bl4omArchie/eprint-DB/core/utility"
 
+
 type Source interface {
 	ScopeDefinitionProcess(errChan *utility.ErrorChannel)
 	CraftUrlProcess(errChan *utility.ErrorChannel)

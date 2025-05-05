@@ -3,8 +3,8 @@ package utility
 import (
 	"fmt"
 	"os"
-	"sync"
 	"time"
+	"sync/atomic"
 )
 
 type ErrorReport struct {
@@ -15,8 +15,7 @@ type ErrorReport struct {
 type ErrorChannel struct {
 	logfile *os.File
 	wec   chan ErrorReport
-	count int
-	mu    sync.Mutex
+	count atomic.Uint32
 }
 
 func CreateErrorReport(msg string, wec *ErrorChannel) {
@@ -24,16 +23,14 @@ func CreateErrorReport(msg string, wec *ErrorChannel) {
 		Message:  msg,
 		Timestamp: time.Now().Format(time.RFC850),
 	}
-	wec.mu.Lock()
-	wec.count++
-	wec.mu.Unlock()
+	wec.count.Add(1)
 }
 
 func CreateErrorChannel() *ErrorChannel {
 	return &ErrorChannel{
 		logfile: CreateLogFile(),
 		wec:   make(chan ErrorReport),
-		count: 0,
+		count: atomic.Uint32{},
 	}
 }
 
