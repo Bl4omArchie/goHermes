@@ -15,7 +15,7 @@ type ErrorReport struct {
 type ErrorChannel struct {
 	logfile *os.File
 	errChannel chan ErrorReport
-	count atomic.Uint32
+	count atomic.Uint64
 }
 
 func CreateErrorReport(msg string, errChannel *ErrorChannel) {
@@ -30,15 +30,14 @@ func CreateErrorChannel() *ErrorChannel {
 	return &ErrorChannel{
 		logfile: CreateLogFile(),
 		errChannel:   make(chan ErrorReport),
-		count: atomic.Uint32{},
+		count: atomic.Uint64{},
 	}
 }
 
 func CreateLogFile() (*os.File) {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
-		err := os.Mkdir("logs", os.ModeDir)
-		if err != nil {
-			fmt.Printf("Error creating logs directory: %v\n", err)
+		if err := os.Mkdir("logs", 0755); err != nil {
+			fmt.Printf("failed to create logs directory: %w", err)
 			return nil
 		}
 	}

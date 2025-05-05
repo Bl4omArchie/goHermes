@@ -69,7 +69,6 @@ func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
 		docId := 0
 		for year, papersYears := range eprint.PapersByYear {
 			yearUrl := path.Join(baseURL, year)
-			fmt.Println(year)
 			
 			for docCount := range papersYears {
 				docIdYear := fmt.Sprintf("%03d", docCount)
@@ -79,9 +78,8 @@ func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
 					UrlDownload: path.Join(yearUrl, docIdYear+".pdf"),
 					Filepath: path.Join("pdf", "eprint", docIdYear+".pdf"),
 				}
-				fmt.Println(doc.UrlDownload)
-
-				if (GetMetadataEprint(doc, errChannel) != nil) {
+				
+				if err := GetMetadataEprint(doc, errChannel); err != nil {
 					docId++
 					doc.DocId = docId
 					downloadPool.tasks <- DownloadTask{doc.UrlDownload, doc.Filepath, doc.DocId}
@@ -89,18 +87,21 @@ func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
 				}
 			}
 		}
+		close(downloadPool.tasks)
 	}()
 
 	for result := range downloadPool.results {
 		fmt.Println("Download status:", result.status, "Hash:", result.hash)
 		eprint.Docs[result.taskId].Hash = result.hash
 	}
+	close(downloadPool.results)
 }
 
 func GetMetadataEprint(docTodo *EprintDoc, errChannel *ErrorChannel) (error) {
 	data, err := GetPageContent(docTodo.UrlMetadata, errChannel)
 
 	if (err != nil) {
+		CreateErrorReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.UrlMetadata, err), errChannel)
 		return err
 	}
 	

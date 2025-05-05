@@ -2,7 +2,6 @@ package core
 
 
 import (
-    _ "fmt"
     "sync"
 )
 
@@ -39,23 +38,13 @@ func DownloadWorker(tasks <-chan DownloadTask, results chan<- DownloadResult, er
 func StartDownloadPool(numWorkers int, errChannel *ErrorChannel) *DownloadPool {
     tasks := make(chan DownloadTask)
     results := make(chan DownloadResult)
-    var wg sync.WaitGroup
-   
+    
     for i := 1; i <= numWorkers; i++ {
-        wg.Add(1)
-		go func() {
-			defer wg.Done()
-			DownloadWorker(tasks, results, errChannel)
-		}()
+		go DownloadWorker(tasks, results, errChannel)
     }
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
 
 	return &DownloadPool{
 		tasks:   tasks,
 		results: results,
-		wg:      &wg,
 	}
 }
