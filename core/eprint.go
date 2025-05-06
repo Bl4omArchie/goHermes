@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-    "sync/atomic"
 )
 
 var (
@@ -24,7 +23,6 @@ type EprintSource struct {
 type EprintDoc struct {
 	UrlMetadata string
 	UrlDownload string
-	DocId atomic.Uint64
 	Filepath string
 	Title string
 	Hash string
@@ -34,13 +32,13 @@ type EprintDoc struct {
 }
 
 
-func InitEprint(errChannel *ErrorChannel) (*EprintSource) {
+func InitEprint(logChannel *LogChannel) (*EprintSource) {
 	eprint := &EprintSource{
 		TotalDocuments: 0,
-		SourceStoragePath: "pdf/eprint2/",
+		SourceStoragePath: "pdf/eprint/",
 		PapersByYear: make(map[string]int),
 	}
-	body, _ := GetPageContent(baseURL + endPointByYear, errChannel)
+	body, _ := GetPageContent(baseURL + endPointByYear, logChannel)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
@@ -59,8 +57,8 @@ func InitEprint(errChannel *ErrorChannel) (*EprintSource) {
 	return eprint
 }
 
-func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
-	downloadPool := StartDownloadPool(100, errChannel)
+func DownloadEprint(eprint *EprintSource, logChannel *LogChannel) {
+	downloadPool := StartDownloadPool(100, logChannel)
 
 	for year, papersYears := range eprint.PapersByYear {
 		go func() {
@@ -72,7 +70,6 @@ func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
 				doc := EprintDoc {
 					UrlMetadata: yearUrl + docIdYear,
 					UrlDownload: yearUrl + docIdYear +".pdf",
-					DocId: atomic.Uint64{},
 					Filepath: path.Join(eprint.SourceStoragePath, year, docIdYear+".pdf"),
 				}
 
@@ -85,11 +82,11 @@ func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
     close(downloadPool.tasks)
 }
 
-func GetMetadataEprint(docTodo *EprintDoc, errChannel *ErrorChannel) (error) {
-	data, err := GetPageContent(docTodo.UrlMetadata, errChannel)
+func GetMetadataEprint(docTodo *EprintDoc, logChannel *LogChannel) (error) {
+	data, err := GetPageContent(docTodo.UrlMetadata, logChannel)
 
 	if (err != nil) {
-		CreateErrorReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.UrlMetadata, err), errChannel)
+		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.UrlMetadata, err), logChannel)
 		return err
 	}
 	

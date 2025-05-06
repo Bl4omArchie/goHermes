@@ -3,11 +3,11 @@ package core
 
 
 func StartEngine() {
-	errChannel := CreateErrorChannel()
-	go ListenerLogFile(errChannel)
+	logChannel := CreateLogChannel()
+	go ListenerLogFile(logChannel)
 
-	eprint := InitEprint(errChannel)
-	DownloadEprint(eprint, errChannel)
+	eprint := InitEprint(logChannel)
+	DownloadEprint(eprint, logChannel)
 
-	close(errChannel.errChannel)
+	close(logChannel.logChannel)
 }
