@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Bl4omArchie/eprint-DB/core/engine"
-	"github.com/Bl4omArchie/eprint-DB/core/utility"
+	"github.com/Bl4omArchie/eprint-DB/core"
 )
 
 func getHeader() {
@@ -26,15 +25,27 @@ func getMenu() {
 	fmt.Println("\033[1;33m------------------------------------------------\033[0m")
 }
 
+func GetIntegerInput(message string) int {
+	var choice int
+	fmt.Print("Enter your choice: ")
+	_, err := fmt.Scan(&choice)
+
+	if err != nil {
+		fmt.Println(message)
+		return GetIntegerInput(message)
+	}
+	fmt.Print("\n")
+	return choice
+}
 
 func main() {
 	getHeader()
 	getMenu()
-	choice := utility.GetIntegerInput("Input your option : ")
+	choice := GetIntegerInput("Input your option : ")
 
 	switch choice {
 		case 1:
-			engine.StartEngine()
+			core.StartEngine()
 		case 2:
 			fmt.Println("Not implemented...")
 		case 3:
