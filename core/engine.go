@@ -1,6 +1,5 @@
 package core
 
-import "fmt"
 
 
 func StartEngine() {
@@ -8,6 +7,7 @@ func StartEngine() {
 	go ListenerLogFile(errChannel)
 
 	eprint := InitEprint(errChannel)
-	fmt.Println(eprint.PapersByYear)
 	DownloadEprint(eprint, errChannel)
+
+	close(errChannel.errChannel)
 }

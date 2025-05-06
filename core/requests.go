@@ -30,7 +30,7 @@ func GetPageContent(url string, errChann *ErrorChannel) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%x", data), nil
+	return string(data), nil
 }
 
 func DownloadDocumentReturnHash(url string, filePath string, errChann *ErrorChannel) (string, error) {

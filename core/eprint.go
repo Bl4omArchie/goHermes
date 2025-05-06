@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+    "sync/atomic"
 )
 
 var (
@@ -15,7 +16,6 @@ var (
 )
 
 type EprintSource struct {
-	Docs []*EprintDoc
 	TotalDocuments int
 	SourceStoragePath string
 	PapersByYear map[string]int
@@ -24,7 +24,7 @@ type EprintSource struct {
 type EprintDoc struct {
 	UrlMetadata string
 	UrlDownload string
-	DocId int
+	DocId atomic.Uint64
 	Filepath string
 	Title string
 	Hash string
@@ -34,18 +34,16 @@ type EprintDoc struct {
 }
 
 
-// SDP : for a given source, target the required papers in a Scope.
 func InitEprint(errChannel *ErrorChannel) (*EprintSource) {
 	eprint := &EprintSource{
 		TotalDocuments: 0,
-		Docs: []*EprintDoc{},
-		SourceStoragePath: "pdf/eprint/",
+		SourceStoragePath: "pdf/eprint2/",
 		PapersByYear: make(map[string]int),
 	}
-	body, _ := GetPageContent(path.Join(baseURL, endPointByYear), errChannel)
+	body, _ := GetPageContent(baseURL + endPointByYear, errChannel)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
-	matches_years := re_years.FindAllStringSubmatch(string(body), -1)
+	matches_years := re_years.FindAllStringSubmatch(body, -1)
 
 	sum := 0
 	// Fill the struct with years
@@ -61,40 +59,30 @@ func InitEprint(errChannel *ErrorChannel) (*EprintSource) {
 	return eprint
 }
 
-// CUP : craft every requested urls to download documents of one source
 func DownloadEprint(eprint *EprintSource, errChannel *ErrorChannel) {
-	downloadPool := StartDownloadPool(15, errChannel)
+	downloadPool := StartDownloadPool(100, errChannel)
 
-	go func() {
-		docId := 0
-		for year, papersYears := range eprint.PapersByYear {
-			yearUrl := path.Join(baseURL, year)
+	for year, papersYears := range eprint.PapersByYear {
+		go func() {
+			yearUrl := baseURL + "/" + year + "/"
 			
-			for docCount := range papersYears {
+			for docCount := 1; docCount < papersYears; docCount++ {
 				docIdYear := fmt.Sprintf("%03d", docCount)
 
-				doc := &EprintDoc {
-					UrlMetadata: path.Join(yearUrl, docIdYear),
-					UrlDownload: path.Join(yearUrl, docIdYear+".pdf"),
-					Filepath: path.Join("pdf", "eprint", docIdYear+".pdf"),
+				doc := EprintDoc {
+					UrlMetadata: yearUrl + docIdYear,
+					UrlDownload: yearUrl + docIdYear +".pdf",
+					DocId: atomic.Uint64{},
+					Filepath: path.Join(eprint.SourceStoragePath, year, docIdYear+".pdf"),
 				}
-				
-				if err := GetMetadataEprint(doc, errChannel); err != nil {
-					docId++
-					doc.DocId = docId
-					downloadPool.tasks <- DownloadTask{doc.UrlDownload, doc.Filepath, doc.DocId}
-					eprint.Docs = append(eprint.Docs, doc)
-				}
-			}
-		}
-		close(downloadPool.tasks)
-	}()
 
-	for result := range downloadPool.results {
-		fmt.Println("Download status:", result.status, "Hash:", result.hash)
-		eprint.Docs[result.taskId].Hash = result.hash
+				downloadPool.tasks <- doc
+			}
+		}()
 	}
-	close(downloadPool.results)
+
+    downloadPool.wg.Wait()
+    close(downloadPool.tasks)
 }
 
 func GetMetadataEprint(docTodo *EprintDoc, errChannel *ErrorChannel) (error) {
