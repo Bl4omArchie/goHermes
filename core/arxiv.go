@@ -1,8 +1,6 @@
 package core
 
 
-import "sync/atomic"
-
 var (
 	arxivApi = "export.arxiv.org/api/query?search_query="
 )
@@ -17,13 +15,19 @@ type ArxivRssFeed struct {
 }
 
 type ArxivDoc struct {
-	UrlMetadata string
-	UrlDownload string
-	PubDate string
-	Title string
-	Hash string
-	Summary string
+	Url string
+	Doc Document
 	Authors []Author
-	DocId atomic.Uint64
+}
+
+func InitArxiv() {
+
+}
+
+func DownloadArxiv() {
+
+}
+
+func GetMetadataArxiv() {
 	
 }

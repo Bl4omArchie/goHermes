@@ -1,33 +1,15 @@
 # ePrint D.
 
 This tool is a golang script that download papers from the website ePrint.
-It stores every PDF into a datalake and apply compression for a better storage.
+It stores every PDF into a folder and fill a database with metadata.
+The point of this project is to create a datalake for AI training and experimentation.
 
-# TODO
-In order of priority :
+Current supported sources :
+- ePrint
 
-1- Downloading Pool ✅
-    1.1- DownloadPool structure ✅
-    1.2- Goroutines for download ✅
-    1.3- Limit rate to avoid timeout ✅
+In-coming sources :
+- arxiv
+- NIST
+- HAL
 
-2- MetaData Pool 🚧
-    2.1- Retrieve authors names
-    2.2- Title of the document
-    2.3- Category
-    2.4- Release date
-
-3- Database
-    3.1- Creation of database with Sqlite (script and schema) 🟠
-    3.2- Start filling for testing 🟠
-    3.3- begin workflow with filling db 🚧
-
-4- Error channel 🚧
-    3.1- reporting missing documents
-    3.2- handle error to continue the download
-
-5- License checking
-
-
-Bonus :
-- Progress bar ✅
+!["picture"](img/menu.png)

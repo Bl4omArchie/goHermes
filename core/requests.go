@@ -1,67 +1,88 @@
 package core
 
-
 import (
+	"os"
+	"io"
+	"fmt"
+	"net/http"
 	"crypto/sha256"
 	"path/filepath"
-	"net/http"
-	"fmt"
-	"io"
-	"os"
+	"golang.org/x/net/html"
 )
 
 
-func GetPageContent(url string, errChann *LogChannel) (string, error) {
+func GetPageContent(url string, errChan *Log) (string, error) {
 	resp, err := http.Get(url)
 	if (err != nil) {
-		CreateLogReport(fmt.Sprintf("Log fetching URL %s: %v", url, err), errChann)
+		CreateLogReport(fmt.Sprintf("Log fetching URL %s: %v", url, err), errChan)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		CreateLogReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), errChann)
+		CreateLogReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), errChan)
 		return "", err
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		CreateLogReport(fmt.Sprintf("Log reading response body for URL %s: %v", url, err), errChann)
+		CreateLogReport(fmt.Sprintf("Log reading response body for URL %s: %v", url, err), errChan)
 		return "", err
 	}
 
 	return string(data), nil
 }
 
-func DownloadDocumentReturnHash(url string, filePath string, errChann *LogChannel) (string, error) {
-	data, _ := GetPageContent(url, errChann)
+func GetParsedPageContent(url string, errChan *Log) (*html.Node, error){
+	resp, err := http.Get(url)
+	if (err != nil) {
+		CreateLogReport(fmt.Sprintf("Log fetching URL %s: %v", url, err), errChan)
+		return &html.Node{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		CreateLogReport(fmt.Sprintf("Failed to download document %s: status code %d", url, resp.StatusCode), errChan)
+		return &html.Node{}, err
+	}
+
+	return html.Parse(resp.Body)
+}
+
+func DownloadDocumentReturnHash(url string, filePath string, errChan *Log) (string, error) {
+	data, err := GetPageContent(url, errChan)
+
+	if err != nil {
+		CreateLogReport(fmt.Sprintf("Paper has been withdrawn %s: %v", filePath, err), errChan)
+		return "", err
+	}
 
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		CreateLogReport(fmt.Sprintf("Log creating directories for %s: %v", filePath, err), errChann)
+		CreateLogReport(fmt.Sprintf("Log creating directories for %s: %v", filePath, err), errChan)
 		return "", err
 	}
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		CreateLogReport(fmt.Sprintf("Log creating file %s: %v", filePath, err), errChann)
+		CreateLogReport(fmt.Sprintf("Log creating file %s: %v", filePath, err), errChan)
 		return "", err
 	}
 	defer file.Close()
 
 	_, err = file.Write([]byte(data))
 	if err != nil {
-		CreateLogReport(fmt.Sprintf("Log writing to file %s: %v", filePath, err), errChann)
+		CreateLogReport(fmt.Sprintf("Log writing to file %s: %v", filePath, err), errChan)
 		return "", err
 	}
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		CreateLogReport(fmt.Sprintf("Log seeking file %s: %v", filePath, err), errChann)
+		CreateLogReport(fmt.Sprintf("Log seeking file %s: %v", filePath, err), errChan)
 		return "", err
 	}
 
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {
-		CreateLogReport(fmt.Sprintf("failed to compute hash: %v", err), errChann)
+		CreateLogReport(fmt.Sprintf("failed to compute hash: %v", err), errChan)
 		return "", err
 	}
 

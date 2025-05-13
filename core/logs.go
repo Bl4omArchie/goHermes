@@ -12,13 +12,13 @@ type LogReport struct {
 	Timestamp string
 }
 
-type LogChannel struct {
+type Log struct {
 	logfile *os.File
 	logChannel chan LogReport
 	count atomic.Uint64
 }
 
-func CreateLogReport(msg string, logChannel *LogChannel) {
+func CreateLogReport(msg string, logChannel *Log) {
 	logChannel.logChannel <- LogReport{
 		Message:  msg,
 		Timestamp: time.Now().Format(time.RFC850),
@@ -26,10 +26,10 @@ func CreateLogReport(msg string, logChannel *LogChannel) {
 	logChannel.count.Add(1)
 }
 
-func CreateLogChannel() *LogChannel {
-	return &LogChannel{
+func CreateLogChannel() *Log {
+	return &Log{
 		logfile: CreateLogFile(),
-		logChannel:   make(chan LogReport),
+		logChannel: make(chan LogReport),
 		count: atomic.Uint64{},
 	}
 }
@@ -42,7 +42,7 @@ func CreateLogFile() (*os.File) {
 		}
 	}
 
-	filePath := fmt.Sprintf("logs/Log_%d.log", time.Now().Unix())
+	filePath := fmt.Sprintf("logs/log_%d.log", time.Now().Unix())
 	logfile, err := os.Create(filePath)
 	if err != nil {
 		fmt.Printf("Error creating log file: %v\n", err)
@@ -51,7 +51,7 @@ func CreateLogFile() (*os.File) {
 	return logfile
 }
 
-func ListenerLogFile(logChannel *LogChannel) {
+func ListenerLogFile(logChannel *Log) {
 	for errReport := range logChannel.logChannel {
 		logEntry := fmt.Sprintf("%s : %s\n", errReport.Timestamp, errReport.Message)
 		_, err := logChannel.logfile.WriteString(logEntry)

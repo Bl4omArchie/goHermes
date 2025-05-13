@@ -6,11 +6,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"golang.org/x/net/html"
 )
 
 var (
 	baseURL           = "https://eprint.iacr.org"
-	endPointComplete  = "/complete"
 	endPointByYear    = "/byyear"
 )
 
@@ -21,24 +21,19 @@ type EprintSource struct {
 }
 
 type EprintDoc struct {
-	UrlMetadata string
-	UrlDownload string
-	Filepath string
-	Title string
-	Hash string
-	Release string
-	License string
+	Url string
+	Doc Document
 	Authors []Author
 }
 
 
-func InitEprint(logChannel *LogChannel) (*EprintSource) {
+func InitEprint(engineInstance *Engine) (*EprintSource) {
 	eprint := &EprintSource{
 		TotalDocuments: 0,
 		SourceStoragePath: "pdf/eprint/",
 		PapersByYear: make(map[string]int),
 	}
-	body, _ := GetPageContent(baseURL + endPointByYear, logChannel)
+	body, _ := GetPageContent(baseURL + endPointByYear, engineInstance.Log)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
@@ -57,70 +52,77 @@ func InitEprint(logChannel *LogChannel) (*EprintSource) {
 	return eprint
 }
 
-func DownloadEprint(eprint *EprintSource, logChannel *LogChannel) {
-	downloadPool := StartDownloadPool(100, logChannel)
+func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
+	downloadPool := StartDownloadPool(engineInstance.NumWorkersPools, engineInstance.Log)
+	docIdYear := ""
+	
+	// eprint.PapersByYear = map[string]int{"1997": 14}
 
 	for year, papersYears := range eprint.PapersByYear {
 		go func() {
 			yearUrl := baseURL + "/" + year + "/"
 			
 			for docCount := 1; docCount < papersYears; docCount++ {
-				docIdYear := fmt.Sprintf("%03d", docCount)
+				docIdYear = fmt.Sprintf("%03d", docCount)
 
+				// Instantiate Document and EprintDoc (add url, filepath and source)
 				doc := EprintDoc {
-					UrlMetadata: yearUrl + docIdYear,
-					UrlDownload: yearUrl + docIdYear +".pdf",
-					Filepath: path.Join(eprint.SourceStoragePath, year, docIdYear+".pdf"),
+					Url: yearUrl + docIdYear,
+					Doc: Document{Url: yearUrl + docIdYear +".pdf", Filepath: path.Join(eprint.SourceStoragePath, year, docIdYear+".pdf"), Source: "Cryptology {ePrint} Archive", },
 				}
-
 				downloadPool.tasks <- doc
 			}
 		}()
 	}
 
-    downloadPool.wg.Wait()
-    close(downloadPool.tasks)
-}
-
-func GetMetadataEprint(docTodo *EprintDoc, logChannel *LogChannel) (error) {
-	data, err := GetPageContent(docTodo.UrlMetadata, logChannel)
-
-	if (err != nil) {
-		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.UrlMetadata, err), logChannel)
-		return err
-	}
-	
-	reTitle := regexp.MustCompile(`<title>(.*?)</title>`)
-	reAuthor := regexp.MustCompile(`<meta name="author" content="(.*?)">`)
-	reLicense := regexp.MustCompile(`<meta name="license" content="(.*?)">`)
-
-	matchTitle := reTitle.FindStringSubmatch(data)
-	if len(matchTitle) > 1 {
-		docTodo.Title = matchTitle[1]
-	}
-
-	matchAuthors := reAuthor.FindAllStringSubmatch(data, -1)
-	for _, match := range matchAuthors {
-		if len(match) > 1 {
-			names := strings.Split(match[1], " ")
-			firstName := ""
-			lastName := ""
-			if len(names) > 1 {
-				firstName = names[0]
-				lastName = names[len(names)-1]
-			} else {
-				lastName = names[0]
-			}
-			docTodo.Authors = append(docTodo.Authors, Author{
-				FirstName: firstName,
-				LastName:  lastName,
-			})
+	for result := range downloadPool.results {
+		if (result.status == 1) {
+			/*
+			fmt.Println(result.toIngest.Doc.Title)
+			fmt.Println(result.toIngest.Doc.Authors)
+			fmt.Println(result.toIngest.Doc.Release)
+			fmt.Println(result.toIngest.Doc.License)
+			fmt.Println("=========================")
+			*/
+			continue
 		}
 	}
+}
 
-	matchLicense := reLicense.FindStringSubmatch(data)
-	if len(matchLicense) > 1 {
-		docTodo.License = matchLicense[1]
-	}
+
+func processNode(n *html.Node) {
+	// TODO
+    switch n.Data {
+		case "h2":
+			if n.FirstChild != nil && n.FirstChild.Type == html.TextNode {
+				name := n.FirstChild.Data
+				fmt.Println("Name:", name)
+			}
+    }
+
+    for c := n.FirstChild; c != nil; c = c.NextSibling {
+        processNode(c)
+    }
+}
+
+func GetMetadataEprint(docTodo *EprintDoc, log *Log) (error) {
+	doc, err := GetParsedPageContent(docTodo.Url, log)
+    if err != nil {
+        CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.Url, err), log)
+        return err
+    }
+
+	var processAllProduct func(*html.Node)
+    processAllProduct = func(n *html.Node) {
+        if n.Type == html.ElementNode {
+            processNode(n)
+ 
+        }
+        for c := n.FirstChild; c != nil; c = c.NextSibling {
+            processAllProduct(c)
+        }
+    }
+    processAllProduct(doc)
+
 	return nil
 }
