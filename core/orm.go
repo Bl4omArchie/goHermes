@@ -11,6 +11,7 @@ type Document struct {
 	Title string		`gorm:"unique;not null"`
 	Authors []Author	`gorm:"many2many:author_documents;not null"`
 	Filepath string		`gorm:"unique;not null"`
+	Extension string	`gorm:"not null"`
 	Url string			`gorm:"unique;not null"`
 	Hash string			`gorm:"unique;not null"`
 	Release string		`gorm:"not null"`
