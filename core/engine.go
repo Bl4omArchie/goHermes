@@ -38,6 +38,11 @@ func CreateEngineInstance() (*Engine, error) {
 		return nil, err
 	}
 
+	err = MigrateSqliteDatabase(database, log, &Document{}, &Author{})
+	if err != nil {
+		return nil, err
+	}
+
 	return &Engine {
 		Log: log,
 		SqliteDb: database,

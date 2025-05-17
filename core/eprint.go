@@ -55,8 +55,6 @@ func InitEprint(engineInstance *Engine) (*EprintSource) {
 func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 	downloadPool := StartDownloadPool(engineInstance.NumWorkersPools, engineInstance.Log)
 	docIdYear := ""
-	
-	eprint.PapersByYear = map[string]int{"1997": 14}
 
 	for year, papersYears := range eprint.PapersByYear {
 		go func() {
@@ -80,13 +78,7 @@ func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 
 	for result := range downloadPool.results {
 		if (result.status == 1) {
-			fmt.Println("Title: ", result.toIngest.Doc.Title)
-			fmt.Println("Filepath: ", result.toIngest.Doc.Filepath)
-			fmt.Println("Release: ", result.toIngest.Doc.Release)
-			fmt.Println("Hash: ",result.toIngest.Doc.Hash)
-			fmt.Println("License: ",result.toIngest.Doc.License)
-			fmt.Println("=========================")
-			continue
+			InsertDocument(&result.toIngest.Doc, &result.toIngest.Authors, engineInstance)
 		}
 	}
 }
