@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/driver/sqlite"
 )
@@ -10,6 +11,7 @@ type Document struct {
 	Title    string    `gorm:"unique;not null"`
 	Authors  []Author  `gorm:"many2many:author_documents;not null"`
 	Filepath string    `gorm:"unique;not null"`
+	Filetype string    `gorm:"unique;not null"`
 	Url      string    `gorm:"unique;not null"`
 	Hash     string    `gorm:"not null"`
 	Release  string    `gorm:"not null"`
@@ -61,7 +63,7 @@ func InsertDocument(doc *Document, authors *[]Author, engineInstance *Engine) er
 
 	err := engineInstance.SqliteDb.Create(doc).Error
 	if err != nil {
-		CreateLogReport("Failed to insert document into database", engineInstance.Log)
+		CreateLogReport(fmt.Sprintf("Insert failed for title '%s', url '%s': %v", doc.Title, doc.Url, err), engineInstance.Log)
 		return err
 	}
 

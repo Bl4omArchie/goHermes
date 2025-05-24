@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,9 +22,7 @@ type EprintSource struct {
 type EprintDoc struct {
 	Url string
 	Doc Document
-	Authors []Author
 }
-
 
 func InitEprint(engineInstance *Engine) (*EprintSource) {
 	eprint := &EprintSource{
@@ -67,8 +64,6 @@ func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 				doc := EprintDoc {
 					Url: yearUrl + docIdYear,
 					Doc: Document{
-						Url: yearUrl + docIdYear +".pdf", 
-						Filepath: path.Join(eprint.SourceStoragePath, year, docIdYear+".pdf"), 
 						Source: "Cryptology {ePrint} Archive", },
 				}
 				downloadPool.tasks <- doc
@@ -78,7 +73,13 @@ func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 
 	for result := range downloadPool.results {
 		if (result.status == 1) {
-			InsertDocument(&result.toIngest.Doc, &result.toIngest.Authors, engineInstance)
+			fmt.Println("===============================")
+			fmt.Println(result.toIngest.Doc.Url)
+			fmt.Println(result.toIngest.Doc.Title)
+			fmt.Println(result.toIngest.Doc.ID)
+			fmt.Println(result.toIngest.Doc.Authors)
+			fmt.Println(result.toIngest.Doc.Hash)
+			InsertDocument(&result.toIngest.Doc, &result.toIngest.Doc.Authors, engineInstance)
 		}
 	}
 }
@@ -108,60 +109,77 @@ func parseBibTeXSimple(input string) map[string]string {
 	return fields
 }
 
-func GetMetadataEprint(docTodo *EprintDoc, log *Log) (error) {
+func GetMetadataEprint(docTodo *EprintDoc, log *Log) error {
 	doc, err := GetPageContent(docTodo.Url, log)
-    if err != nil {
-        CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.Url, err), log)
-        return err
-    }
+	if err != nil {
+		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.Url, err), log)
+		return err
+	}
 
-    tkn := html.NewTokenizer(strings.NewReader(doc))
+	tkn := html.NewTokenizer(strings.NewReader(doc))
 
-	license := ""
-	bibtex := ""
-	MetaFlag := 0
-	
-	for MetaFlag < 2 {
+	var license, bibtex, pdfHref string
+	foundLicense := false
+	foundBibtex := false
+	foundPDF := false
+
+	for {
 		tt := tkn.Next()
+		if tt == html.ErrorToken {
+			if !foundBibtex {
+				CreateLogReport(fmt.Sprintf("Couldn't find bibtex [%s]. Error: %v", docTodo.Url, tkn.Err()), log)
+			}
+			break
+		}
 
-		switch {
-			case tt == html.ErrorToken:
-				CreateLogReport(fmt.Sprintf("Couldn't find bibtex [%s]. Error : %v", docTodo.Url, tkn.Err()), log)
-				MetaFlag = 2
+		token := tkn.Token()
 
-			case tt == html.StartTagToken:
-				t := tkn.Token()
-				
-				// Get license
-				if t.Data == "small" {
-					tt = tkn.Next()
+		if tt == html.StartTagToken {
+			switch token.Data {
+			case "small":
+				if !foundLicense && tkn.Next() == html.TextToken {
+					license = strings.TrimSpace(tkn.Token().Data)
+					foundLicense = true
+				}
 
-					if tt == html.TextToken {
-						t := tkn.Token()
-						license = t.Data
-						MetaFlag++
-						break
+			case "pre":
+				if !foundBibtex && tkn.Next() == html.TextToken {
+					bibtex = strings.TrimSpace(tkn.Token().Data)
+					foundBibtex = true
+				}
+
+			case "a":
+				if !foundPDF {
+					for _, attr := range token.Attr {
+						if attr.Key == "class" && attr.Val == "btn btn-sm btn-outline-dark" {
+							for _, a := range token.Attr {
+								if a.Key == "href" {
+									pdfHref = a.Val
+									foundPDF = true
+									break
+								}
+							}
+						}
 					}
 				}
-				
-				// Get bibtex (title, release date, authors)
-				if t.Data == "pre" {
-					tt = tkn.Next()
+			}
+		}
 
-					if tt == html.TextToken {
-						t := tkn.Token()
-						bibtex = t.Data
-						MetaFlag++
-						break
-					}
-				}
+		// Stop if all data has been found
+		if foundLicense && foundBibtex && foundPDF {
+			break
 		}
 	}
 
+	docTodo.Doc.Filetype = pdfHref
+	docTodo.Doc.Url = baseURL + pdfHref
+	docTodo.Doc.Filepath = "pdf/eprint" + pdfHref
 	docTodo.Doc.License = license
+
 	fields := parseBibTeXSimple(bibtex)
 	docTodo.Doc.Title = fields["title"]
 	docTodo.Doc.Release = fields["year"]
 
 	return nil
 }
+
