@@ -58,13 +58,13 @@ func DownloadDocumentReturnHash(url string, filePath string, errChan *Log) (stri
 	}
 
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		CreateLogReport(fmt.Sprintf("Log creating directories for %s: %v", filePath, err), errChan)
+		CreateLogReport(fmt.Sprintf("Error while creating directories for %s: %v", filePath, err), errChan)
 		return "", err
 	}
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		CreateLogReport(fmt.Sprintf("Log creating file %s: %v", filePath, err), errChan)
+		CreateLogReport(fmt.Sprintf("Error while creating file %s: %v", filePath, err), errChan)
 		return "", err
 	}
 	defer file.Close()

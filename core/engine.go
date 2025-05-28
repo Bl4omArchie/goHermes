@@ -2,7 +2,6 @@ package core
 
 import (
 	"gorm.io/gorm"
-	_ "fmt"
 )
 
 
@@ -18,7 +17,9 @@ func StartEngine() {
 	if (err != nil) {
 		return
 	}
-	
+
+	MigrateSqliteDatabase(engineInstance, &Document{}, &Author{})
+
 	eprint := InitEprint(engineInstance)
 	DownloadEprint(eprint, engineInstance)
 
@@ -35,11 +36,6 @@ func CreateEngineInstance() (*Engine, error) {
 	database, err := OpenSqliteDatabase(databaseName, log)
 	if (err != nil) {
 		CreateLogReport("Can't open database", log)
-		return nil, err
-	}
-
-	err = MigrateSqliteDatabase(database, log, &Document{}, &Author{})
-	if err != nil {
 		return nil, err
 	}
 

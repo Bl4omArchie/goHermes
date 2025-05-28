@@ -76,10 +76,9 @@ func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 			fmt.Println("===============================")
 			fmt.Println(result.toIngest.Doc.Url)
 			fmt.Println(result.toIngest.Doc.Title)
-			fmt.Println(result.toIngest.Doc.ID)
 			fmt.Println(result.toIngest.Doc.Authors)
 			fmt.Println(result.toIngest.Doc.Hash)
-			InsertDocument(&result.toIngest.Doc, &result.toIngest.Doc.Authors, engineInstance)
+			InsertTable(engineInstance, result.toIngest.Doc)
 		}
 	}
 }
