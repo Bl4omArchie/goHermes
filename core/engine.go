@@ -18,7 +18,7 @@ func StartEngine() {
 		return
 	}
 
-	MigrateSqliteDatabase(engineInstance, &Document{}, &Author{})
+	//MigrateSqliteDatabase(engineInstance, &Document{}, &Author{})
 
 	eprint := InitEprint(engineInstance)
 	DownloadEprint(eprint, engineInstance)
