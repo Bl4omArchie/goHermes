@@ -26,8 +26,8 @@ func CreateLogReport(msg string, logChannel *Log) {
 	logChannel.count.Add(1)
 }
 
-func CreateLogChannel() *Log {
-	return &Log{
+func CreateLogChannel(engine *Engine) {
+	engine.Log = &Log{
 		logfile: CreateLogFile(),
 		logChannel: make(chan LogReport),
 		count: atomic.Uint64{},

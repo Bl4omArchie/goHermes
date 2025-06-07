@@ -1,6 +1,9 @@
 package core
 
 import (
+	"fmt"
+	"os"
+
 	"gorm.io/gorm"
 )
 
@@ -12,42 +15,57 @@ type Engine struct {
 	NumWorkersPools int
 }
 
-func StartEngine() {
-	engineInstance, err := CreateEngineInstance()
+func StartEngine() (error) {
+	engine, err := CreateEngineInstance()
 	if (err != nil) {
-		return
+		CreateLogReport("Failed to ceate engine instance", engine.Log)
+		return err
+	}
+	defer ExitEngineInstance(engine)
+
+	fmt.Println(engine.SqliteDb.Statement.Vars...)
+
+	if err := MigrateSqliteDatabase(engine, &Document{}); err != nil {
+		CreateLogReport("Failed to migrate database", engine.Log)
+		return err
 	}
 
-	//MigrateSqliteDatabase(engineInstance, &Document{}, &Author{})
+	eprint := InitEprint(engine)
+	DownloadEprint(eprint, engine)
 
-	eprint := InitEprint(engineInstance)
-	DownloadEprint(eprint, engineInstance)
-
-	ExitEngineInstance(engineInstance)
+	return nil
 }
 
 func CreateEngineInstance() (*Engine, error) {
+	// Temporary setup of engine parameters
 	databaseName := "core/eprint.db"
 	numWorkersPools := 100
+	
+	engine := &Engine{DatabaseName: databaseName, NumWorkersPools: numWorkersPools}
 
-	log := CreateLogChannel()
-	go ListenerLogFile(log)
+	CreateLogChannel(engine)
+	go ListenerLogFile(engine.Log)
 
-	database, err := OpenSqliteDatabase(databaseName, log)
-	if (err != nil) {
-		CreateLogReport("Can't open database", log)
+	if _, err := os.Stat(databaseName); os.IsNotExist(err) {
+		file, err := os.Create(databaseName)
+		if err != nil {
+			CreateLogReport("Failed at attempting to create the database", engine.Log)
+			return nil, err
+		}
+		defer file.Close()
+	}
+
+	err := OpenSqliteDatabase(engine)
+	if err != nil {
+		CreateLogReport("Failed to open database", engine.Log)
 		return nil, err
 	}
 
-	return &Engine {
-		Log: log,
-		SqliteDb: database,
-		DatabaseName: databaseName,
-		NumWorkersPools: numWorkersPools,
-	}, nil
+	return engine, nil
 }
 
-func ExitEngineInstance(engineInstance *Engine) {
-	// TODO : close DB
-	close(engineInstance.Log.logChannel)
+func ExitEngineInstance(engine *Engine) (error) {
+	close(engine.Log.logChannel)
+	err := CloseSqliteDatabase(engine)
+	return err
 }

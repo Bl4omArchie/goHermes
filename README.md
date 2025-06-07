@@ -1,15 +1,28 @@
 # ePrint D.
 
-This tool is a golang script that download papers from the website ePrint.
-It stores every PDF into a folder and fill a database with metadata.
-The point of this project is to create a datalake for AI training and experimentation.
+Eprint DB is a golang tool that scrap and download the Eprint archive. My intention is to gather many data as possible for my personal uses and projects. Its also a practise for Golang language.
 
-Current supported sources :
+Current the script support the following sources :
 - ePrint
 
-In-coming sources :
+And there is the in-coming sources :
 - arxiv
 - NIST
 - HAL
+
+# Roadmap
+
+- [x] Scrapping system for Eprint
+- [x] Log system
+- [x] Worker pool download
+- Ingest data into sqliteDB
+    - [x] Documents
+    - [] License (issue)
+    - [] Authors
+- [] Fix folder and file creation issue
+- [] Make the worker pool stop
+- [] Add more sources like arxiv, NIST...
+
+# Preview of the tool interface
 
 !["picture"](img/menu.png)

@@ -27,19 +27,36 @@ type Author struct {
     Documents []Document `gorm:"many2many:document_authors;"`
 }
 
-func OpenSqliteDatabase(databaseName string, log *Log) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(databaseName), &gorm.Config{})
+func OpenSqliteDatabase(engine *Engine) (error) {
+	db, err := gorm.Open(sqlite.Open(engine.DatabaseName), &gorm.Config{})
 	if err != nil {
-		CreateLogReport("Failed to connect to sqlite database", log)
-		return nil, err
+		CreateLogReport("Failed to connect to sqlite database", engine.Log)
+		return err
+	} else {
+		engine.SqliteDb = db
 	}
-	return db, err
+	return nil
+}
+
+func CloseSqliteDatabase(engine *Engine) error {
+	sqlDB, err := engine.SqliteDb.DB()
+	if err != nil {
+		CreateLogReport("Failed to get sql.DB instance from gorm.DB", engine.Log)
+		return err
+	}
+
+	if err := sqlDB.Close(); err != nil {
+		CreateLogReport("Failed to close sqlite database", engine.Log)
+		return err
+	}
+
+	return nil
 }
 
 func MigrateSqliteDatabase(engine *Engine, tables ...any) error {
-	if err := engine.SqliteDb.AutoMigrate(tables...).Error; err != nil {
+	if err := engine.SqliteDb.AutoMigrate(tables...); err != nil {
 		CreateLogReport("Migration failed", engine.Log)
-		return fmt.Errorf("failed to insert table: %w", err)
+		return err
 	}
 	return nil
 }

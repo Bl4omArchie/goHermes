@@ -53,8 +53,9 @@ func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 	downloadPool := StartDownloadPool(engineInstance.NumWorkersPools, engineInstance.Log)
 	docIdYear := ""
 
-	for year, papersYears := range eprint.PapersByYear {
-		go func() {
+	fmt.Println("Start download ...")
+	go func() {
+		for year, papersYears := range eprint.PapersByYear {
 			yearUrl := baseURL + "/" + year + "/"
 			
 			for docCount := 1; docCount < papersYears; docCount++ {
@@ -68,16 +69,18 @@ func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
 				}
 				downloadPool.tasks <- doc
 			}
-		}()
-	}
+		}
+	}()
 
 	for result := range downloadPool.results {
 		if (result.status == 1) {
+			/*
 			fmt.Println("===============================")
 			fmt.Println(result.toIngest.Doc.Url)
 			fmt.Println(result.toIngest.Doc.Title)
 			fmt.Println(result.toIngest.Doc.Authors)
 			fmt.Println(result.toIngest.Doc.Hash)
+			*/
 			InsertTable(engineInstance, &result.toIngest.Doc)
 		}
 	}
