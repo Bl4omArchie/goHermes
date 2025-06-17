@@ -7,12 +7,17 @@ import (
 	"gorm.io/gorm"
 )
 
+type Source interface {
+	Init(engine *Engine) error
+	Fetch(engine *Engine) error
+}
 
 type Engine struct {
 	Log *Log
 	SqliteDb *gorm.DB
 	DatabaseName string
 	NumWorkersPools int
+	Sources []Source
 }
 
 func StartEngine() (error) {
@@ -30,8 +35,10 @@ func StartEngine() (error) {
 		return err
 	}
 
-	eprint := InitEprint(engine)
-	DownloadEprint(eprint, engine)
+	for _, src := range engine.Sources {
+		src.Init(engine)
+		src.Fetch(engine)
+	}
 
 	return nil
 }
@@ -59,6 +66,10 @@ func CreateEngineInstance() (*Engine, error) {
 	if err != nil {
 		CreateLogReport("Failed to open database", engine.Log)
 		return nil, err
+	}
+
+	engine.Sources = []Source{
+		NewEprintSource(),
 	}
 
 	return engine, nil

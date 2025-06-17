@@ -1,10 +1,12 @@
 package core
 
 import (
+	"os"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+	"path/filepath"
 	"golang.org/x/net/html"
 )
 
@@ -14,8 +16,8 @@ var (
 )
 
 type EprintSource struct {
+	Path string
 	TotalDocuments int
-	SourceStoragePath string
 	PapersByYear map[string]int
 }
 
@@ -24,13 +26,21 @@ type EprintDoc struct {
 	Doc Document
 }
 
-func InitEprint(engineInstance *Engine) (*EprintSource) {
-	eprint := &EprintSource{
+func NewEprintSource() *EprintSource {
+	return &EprintSource{
+		Path:           "pdf/eprint/",
 		TotalDocuments: 0,
-		SourceStoragePath: "pdf/eprint/",
-		PapersByYear: make(map[string]int),
+		PapersByYear:   make(map[string]int),
 	}
-	body, _ := GetPageContent(baseURL + endPointByYear, engineInstance.Log)
+}
+
+func (f *EprintSource) Init(engine *Engine) error  {	
+	if err := os.MkdirAll(filepath.Dir(f.Path), os.ModePerm); err != nil {
+		CreateLogReport(fmt.Sprintf("Error while creating directories for %s: %v", f.Path, err), engine.Log)
+		return err
+	}
+
+	body, _ := GetPageContent(baseURL + endPointByYear, engine.Log)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
@@ -40,78 +50,52 @@ func InitEprint(engineInstance *Engine) (*EprintSource) {
 	for _, match := range matches_years {
 		if len(match) == 3 {
 			docCount, _ := strconv.Atoi(match[2])
-			eprint.PapersByYear[match[1]] = docCount
+			f.PapersByYear[match[1]] = docCount
 			sum += docCount
 		}
 	}
-	eprint.TotalDocuments = sum
+	f.TotalDocuments = sum
 
-	return eprint
+	f.PapersByYear = make(map[string]int)
+	f.PapersByYear["2024"] = 500
+	return nil
 }
 
-func DownloadEprint(eprint *EprintSource, engineInstance *Engine) {
-	downloadPool := StartDownloadPool(engineInstance.NumWorkersPools, engineInstance.Log)
-	docIdYear := ""
+func (f *EprintSource) Fetch(engine *Engine) error {
+	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
 
-	fmt.Println("Start download ...")
 	go func() {
-		for year, papersYears := range eprint.PapersByYear {
+		for year, papersYears := range f.PapersByYear {
 			yearUrl := baseURL + "/" + year + "/"
-			
-			for docCount := 1; docCount < papersYears; docCount++ {
-				docIdYear = fmt.Sprintf("%03d", docCount)
 
-				// Instantiate Document and EprintDoc (add url, filepath and source)
-				doc := EprintDoc {
+			for docCount := 1; docCount < papersYears; docCount++ {
+				docIdYear := fmt.Sprintf("%03d", docCount)
+				doc := EprintDoc{
 					Url: yearUrl + docIdYear,
 					Doc: Document{
-						Source: "Cryptology {ePrint} Archive", },
+						Source: "Cryptology {ePrint} Archive",
+					},
 				}
 				downloadPool.tasks <- doc
 			}
 		}
+		close(downloadPool.tasks)
+	}()
+
+	go func() {
+		downloadPool.waitgroup.Wait()
+		close(downloadPool.results)
 	}()
 
 	for result := range downloadPool.results {
-		if (result.status == 1) {
-			/*
-			fmt.Println("===============================")
-			fmt.Println(result.toIngest.Doc.Url)
-			fmt.Println(result.toIngest.Doc.Title)
-			fmt.Println(result.toIngest.Doc.Authors)
-			fmt.Println(result.toIngest.Doc.Hash)
-			*/
-			InsertTable(engineInstance, &result.toIngest.Doc)
+		if result.status == 1 {
+			InsertTable(engine, &result.toIngest.Doc)
 		}
 	}
+	return nil
 }
 
-func parseBibTeXSimple(input string) map[string]string {
-	fields := make(map[string]string)
-
-	input = strings.Trim(input, "{}")
-	lines := strings.Split(input, "\n")
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if !strings.Contains(line, "=") {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		key := strings.TrimSpace(parts[0])
-		val := strings.TrimSpace(parts[1])
-
-		val = strings.TrimSuffix(val, ",")
-		val = strings.Trim(val, "{}")
-
-		fields[key] = val
-	}
-
-	return fields
-}
-
-func GetMetadataEprint(docTodo *EprintDoc, log *Log) error {
+func FetchMetadata(docTodo *EprintDoc, log *Log) error {
 	doc, err := GetPageContent(docTodo.Url, log)
 	if err != nil {
 		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.Url, err), log)
@@ -185,3 +169,27 @@ func GetMetadataEprint(docTodo *EprintDoc, log *Log) error {
 	return nil
 }
 
+func parseBibTeXSimple(input string) map[string]string {
+	fields := make(map[string]string)
+
+	input = strings.Trim(input, "{}")
+	lines := strings.Split(input, "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if !strings.Contains(line, "=") {
+			continue
+		}
+
+		parts := strings.SplitN(line, "=", 2)
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+
+		val = strings.TrimSuffix(val, ",")
+		val = strings.Trim(val, "{}")
+
+		fields[key] = val
+	}
+
+	return fields
+}
