@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"path"
+	"sync"
 	"regexp"
 	"strconv"
 	"strings"
@@ -61,25 +62,36 @@ func (f *EprintSource) Init(engine *Engine) error  {
 
 func (f *EprintSource) Fetch(engine *Engine) error {
 	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-	go func() {
-		for year, papersYears := range f.PapersByYear {
-			yearUrl := f.BaseUrl + "/" + year + "/"
+	for year, papersYears := range f.PapersByYear {
+		yearUrl := f.BaseUrl + "/" + year + "/"
 
-			for docCount := 1; docCount < papersYears; docCount++ {
+		for docCount := 1; docCount < papersYears; docCount++ {
+			wg.Add(1)
+			docCount := docCount
+
+			go func() {
+				defer wg.Done()
+
 				docIdYear := fmt.Sprintf("%03d", docCount)
 				doc := &Document{
-					Url: yearUrl + docIdYear,
+					Url:    yearUrl + docIdYear,
 					Source: f.Name,
 				}
-				errFetchMeta := FetchMetadata(doc, engine)
-				if errFetchMeta != nil{
-					continue
+				if err := FetchMetadata(doc, engine); err == nil {
+					mu.Lock()
+					f.Documents = append(f.Documents, doc)
+					mu.Unlock()
+					downloadPool.tasks <- doc
 				}
-				f.Documents = append(f.Documents, doc)
-				downloadPool.tasks <- doc
-			}
+			}()
 		}
+	}
+
+	go func() {
+		wg.Wait()
 		close(downloadPool.tasks)
 	}()
 
@@ -93,8 +105,10 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 			InsertTable(engine, &result.toIngest)
 		}
 	}
+
 	return nil
 }
+
 
 func FetchMetadata(doc *Document, engine *Engine) error {
 	body, err := GetPageContent(doc.Url, engine.Log)

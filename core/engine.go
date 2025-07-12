@@ -42,6 +42,7 @@ func StartEngine() (error) {
 		go func() {
 			src.Init(engine)
 			src.Fetch(engine)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -53,7 +54,7 @@ func StartEngine() (error) {
 func CreateEngineInstance() (*Engine, error) {
 	// Temporary setup of engine parameters
 	databaseName := "core/eprint.db"
-	numWorkersPools := 100
+	numWorkersPools := 50
 	
 	engine := &Engine{DatabaseName: databaseName, NumWorkersPools: numWorkersPools}
 
