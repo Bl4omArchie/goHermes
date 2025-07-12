@@ -64,8 +64,8 @@ func MigrateSqliteDatabase(engine *Engine, tables ...any) error {
 func InsertTable(engine *Engine, tables ...any) error {
 	for _, table := range tables {
 		if err := engine.SqliteDb.Create(table).Error; err != nil {
-			CreateLogReport("Insert table failed", engine.Log)
-			return fmt.Errorf("failed to insert table: %w", err)
+			CreateLogReport(fmt.Sprintf("Insert table failed : %v", err), engine.Log)
+			return err
 		}
 	}
 	return nil

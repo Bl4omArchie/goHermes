@@ -1,8 +1,9 @@
 package core
 
 import (
-	"fmt"
 	"os"
+	"fmt"
+	"sync"
 
 	"gorm.io/gorm"
 )
@@ -35,10 +36,16 @@ func StartEngine() (error) {
 		return err
 	}
 
+	var wg sync.WaitGroup
 	for _, src := range engine.Sources {
-		src.Init(engine)
-		src.Fetch(engine)
+		wg.Add(1)
+		go func() {
+			src.Init(engine)
+			src.Fetch(engine)
+		}()
 	}
+	wg.Wait()
+	fmt.Println("Every document has been downloaded")
 
 	return nil
 }
@@ -70,6 +77,7 @@ func CreateEngineInstance() (*Engine, error) {
 
 	engine.Sources = []Source{
 		NewEprintSource(),
+		//NewFreeHavenSource(),
 	}
 
 	return engine, nil

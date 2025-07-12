@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"fmt"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,27 +11,26 @@ import (
 	"golang.org/x/net/html"
 )
 
-var (
-	baseURL           = "https://eprint.iacr.org"
-	endPointByYear    = "/byyear"
-)
-
 type EprintSource struct {
+	Name string
 	Path string
+	BaseUrl string
+	Endpoint string
 	TotalDocuments int
 	PapersByYear map[string]int
+	Documents []*Document
 }
 
-type EprintDoc struct {
-	Url string
-	Doc Document
-}
 
 func NewEprintSource() *EprintSource {
 	return &EprintSource{
-		Path:           "pdf/eprint/",
+		Name: "Cryptology {ePrint} Archive",
+		Path: "pdf/eprint",
+		BaseUrl: "https://eprint.iacr.org",
+		Endpoint: "/byyear",
 		TotalDocuments: 0,
-		PapersByYear:   make(map[string]int),
+		PapersByYear: make(map[string]int),
+		Documents: make([]*Document, 0),
 	}
 }
 
@@ -40,7 +40,7 @@ func (f *EprintSource) Init(engine *Engine) error  {
 		return err
 	}
 
-	body, _ := GetPageContent(baseURL + endPointByYear, engine.Log)
+	body, _ := GetPageContent(f.BaseUrl + f.Endpoint, engine.Log)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
@@ -56,8 +56,6 @@ func (f *EprintSource) Init(engine *Engine) error  {
 	}
 	f.TotalDocuments = sum
 
-	f.PapersByYear = make(map[string]int)
-	f.PapersByYear["2024"] = 500
 	return nil
 }
 
@@ -66,16 +64,19 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 
 	go func() {
 		for year, papersYears := range f.PapersByYear {
-			yearUrl := baseURL + "/" + year + "/"
+			yearUrl := f.BaseUrl + "/" + year + "/"
 
 			for docCount := 1; docCount < papersYears; docCount++ {
 				docIdYear := fmt.Sprintf("%03d", docCount)
-				doc := EprintDoc{
+				doc := &Document{
 					Url: yearUrl + docIdYear,
-					Doc: Document{
-						Source: "Cryptology {ePrint} Archive",
-					},
+					Source: f.Name,
 				}
+				errFetchMeta := FetchMetadata(doc, engine)
+				if errFetchMeta != nil{
+					continue
+				}
+				f.Documents = append(f.Documents, doc)
 				downloadPool.tasks <- doc
 			}
 		}
@@ -89,82 +90,133 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 
 	for result := range downloadPool.results {
 		if result.status == 1 {
-			InsertTable(engine, &result.toIngest.Doc)
+			InsertTable(engine, &result.toIngest)
 		}
 	}
 	return nil
 }
 
-func FetchMetadata(docTodo *EprintDoc, log *Log) error {
-	doc, err := GetPageContent(docTodo.Url, log)
+func FetchMetadata(doc *Document, engine *Engine) error {
+	body, err := GetPageContent(doc.Url, engine.Log)
 	if err != nil {
-		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", docTodo.Url, err), log)
+		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", doc.Url, err), engine.Log)
 		return err
 	}
 
-	tkn := html.NewTokenizer(strings.NewReader(doc))
+	tkn := html.NewTokenizer(strings.NewReader(body))
 
-	var license, bibtex, pdfHref string
+	var license, bibtex, pdfUrl, title, year string
 	foundLicense := false
 	foundBibtex := false
 	foundPDF := false
+	foundTitle := false
+	foundYear := false
+	foundBibtexPre := false
 
 	for {
 		tt := tkn.Next()
 		if tt == html.ErrorToken {
 			if !foundBibtex {
-				CreateLogReport(fmt.Sprintf("Couldn't find bibtex [%s]. Error: %v", docTodo.Url, tkn.Err()), log)
+				CreateLogReport(fmt.Sprintf("Couldn't find bibtex [%s]. Error: %v", doc.Url, tkn.Err()), engine.Log)
 			}
 			break
 		}
 
 		token := tkn.Token()
 
-		if tt == html.StartTagToken {
+		if tt == html.StartTagToken || tt == html.SelfClosingTagToken {
 			switch token.Data {
-			case "small":
-				if !foundLicense && tkn.Next() == html.TextToken {
-					license = strings.TrimSpace(tkn.Token().Data)
+			case "meta":
+				var name, content string
+				for _, attr := range token.Attr {
+					if attr.Key == "name" {
+						name = attr.Val
+					}
+					if attr.Key == "content" {
+						content = attr.Val
+					}
+				}
+				switch name {
+				case "citation_title":
+					title = content
+					foundTitle = true
+				case "citation_publication_date":
+					year = content
+					foundYear = true
+				case "citation_pdf_url":
+					if !foundPDF {
+						pdfUrl = content
+						foundPDF = true
+					}
+				}
+
+			case "a":
+				var classVal, hrefVal, relVal string
+				for _, attr := range token.Attr {
+					if attr.Key == "class" {
+						classVal = attr.Val
+					}
+					if attr.Key == "href" {
+						hrefVal = attr.Val
+					}
+					if attr.Key == "rel" {
+						relVal = attr.Val
+					}
+				}
+				// Fallback PDF link if meta not found
+				if !foundPDF && classVal == "btn btn-sm btn-outline-dark" && strings.HasSuffix(hrefVal, ".pdf") {
+					pdfUrl = hrefVal
+					foundPDF = true
+				}
+				if !foundLicense && relVal == "license" {
+					license = hrefVal
 					foundLicense = true
 				}
 
 			case "pre":
-				if !foundBibtex && tkn.Next() == html.TextToken {
-					bibtex = strings.TrimSpace(tkn.Token().Data)
-					foundBibtex = true
-				}
-
-			case "a":
-				if !foundPDF {
-					for _, attr := range token.Attr {
-						if attr.Key == "class" && attr.Val == "btn btn-sm btn-outline-dark" {
-							for _, a := range token.Attr {
-								if a.Key == "href" {
-									pdfHref = a.Val
-									foundPDF = true
-									break
-								}
-							}
+				for _, attr := range token.Attr {
+					if !foundBibtexPre && attr.Key == "id" && attr.Val == "bibtex" {
+						foundBibtexPre = true
+						tt = tkn.Next()
+						if tt == html.TextToken {
+							bibtex = strings.TrimSpace(tkn.Token().Data)
+							foundBibtex = true
 						}
 					}
 				}
 			}
 		}
 
-		// Stop if all data has been found
-		if foundLicense && foundBibtex && foundPDF {
+		if foundLicense && foundBibtex && foundPDF && foundTitle && foundYear {
 			break
 		}
 	}
 
-	docTodo.Doc.Filetype = pdfHref
-	docTodo.Doc.Url = baseURL + pdfHref
-	docTodo.Doc.Filepath = "pdf/eprint" + pdfHref
-	docTodo.Doc.License = license
-
 	fields := parseBibTeXSimple(bibtex)
-	docTodo.Doc.Title = fields["title"]
-	docTodo.Doc.Release = fields["year"]
+	if title == "" {
+		title = fields["title"]
+	}
+	if year == "" {
+		year = fields["year"]
+	}
+
+	doc.Title = title
+	doc.Release = year
+	doc.License = license
+
+	ext := path.Ext(pdfUrl)
+	if ext == "" {
+		ext = ".pdf"
+	}
+	doc.Filetype = ext
+	doc.Url = strings.TrimRight(doc.Url, "/") + doc.Filetype
+
+	sanitizedTitle := strings.ReplaceAll(title, "/", "-")
+	sanitizedTitle = strings.ReplaceAll(sanitizedTitle, ":", "-")
+	sanitizedTitle = strings.ReplaceAll(sanitizedTitle, "\\", "-")
+	sanitizedTitle = strings.TrimSpace(sanitizedTitle)
+
+	doc.Filepath = fmt.Sprintf("pdf/eprint/%s/%s%s", year, sanitizedTitle, ext)
 
 	return nil
 }

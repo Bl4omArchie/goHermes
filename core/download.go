@@ -6,26 +6,22 @@ import (
 
 
 type DownloadPool struct {
-    tasks chan EprintDoc
+    tasks chan *Document
     results chan DownloadResult
     waitgroup *sync.WaitGroup
 }
 
 type DownloadResult struct {
     status int
-    toIngest EprintDoc
+    toIngest*Document
 }
 
-func DownloadWorker(tasks <-chan EprintDoc, results chan <- DownloadResult, engine *Engine) {
+func DownloadWorker(tasks <-chan *Document, results chan <- DownloadResult, engine *Engine) {
     for task := range tasks {
-        if err := FetchMetadata(&task, engine.Log); err == nil {
-            // Add Hash
-            if hashResult, err := DownloadDocumentReturnHash(task.Doc.Url, task.Doc.Filepath, engine.Log); err == nil {
-                task.Doc.Hash = hashResult
-                results <- DownloadResult{status: 1, toIngest: task}
-            } else  {
-                results <- DownloadResult{status: 0}
-            }
+        // Add Hash
+        if hashResult, err := DownloadDocumentReturnHash(task.Url, task.Filepath, engine.Log); err == nil {
+            task.Hash = hashResult
+            results <- DownloadResult{status: 1, toIngest: task}
         } else  {
             results <- DownloadResult{status: 0}
         }
@@ -33,7 +29,7 @@ func DownloadWorker(tasks <-chan EprintDoc, results chan <- DownloadResult, engi
 }
 
 func StartDownloadPool(numWorkers int, engine *Engine) *DownloadPool {
-    tasks := make(chan EprintDoc)
+    tasks := make(chan *Document)
     results := make(chan DownloadResult)
     var wg sync.WaitGroup
 

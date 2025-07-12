@@ -37,7 +37,7 @@ func CreateLogChannel(engine *Engine) {
 func CreateLogFile() (*os.File) {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
 		if err := os.Mkdir("logs", 0755); err != nil {
-			fmt.Printf("failed to create logs directory: %w", err)
+			fmt.Printf("failed to create logs directory: %v", err)
 			return nil
 		}
 	}
