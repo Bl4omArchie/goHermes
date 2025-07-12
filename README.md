@@ -1,28 +1,31 @@
-# ePrint D.
+# goHermes
 
-Eprint DB is a golang tool that scrap and download the Eprint archive. My intention is to gather many data as possible for my personal uses and projects. Its also a practise for Golang language.
+GoHermes is a golang written script that scraps scientific documents from several sources. It builds a library for several purposes like learning, AI training, collection, etc.
+This tool provides fast document downloading, using Go concurrency, data storage into a Sqlite DB, and a logging system to track downloading errors, like typically withdrawn paper.
 
-Current the script support the following sources :
-- ePrint
+# Features
 
-And there is the in-coming sources :
-- arxiv
-- NIST
-- HAL
+goHermes can currently download pdf from the following sources :
+- ePrint : https://eprint.iacr.org/complete/
+- free haven : https://www.freehaven.net/anonbib/date.html
 
-# Roadmap
+In-coming : a manual discribing the scrapping behaviour for each sources.
 
-- [x] Scrapping system for Eprint
-- [x] Log system
-- [x] Worker pool download
-- Ingest data into sqliteDB
-    - [x] Documents
-    - [] License (issue)
-    - [] Authors
-- [] Fix folder and file creation issue
-- [] Make the worker pool stop
-- [] Add more sources like arxiv, NIST...
-
-# Preview of the tool interface
+# Preview
 
 !["picture"](img/menu.png)
+
+# Tutorial
+
+1- Download the git repository
+```bash
+git clone https://github.com/Bl4omArchie/goHermes
+cd goHermes
+```
+
+2- Launch the script
+```bash
+go run main.go
+```
+
+Once on the main menu, press 1 to download automatically every pdf from every sources.
