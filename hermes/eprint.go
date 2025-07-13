@@ -26,7 +26,7 @@ type EprintSource struct {
 func NewEprintSource() *EprintSource {
 	return &EprintSource{
 		Name: "Cryptology {ePrint} Archive",
-		Path: "pdf/eprint",
+		Path: "pdf/eprint/",
 		BaseUrl: "https://eprint.iacr.org",
 		Endpoint: "/byyear",
 		TotalDocuments: 0,

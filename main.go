@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/Bl4omArchie/eprint-DB/core"
+	
+	"github.com/Bl4omArchie/goHermes/hermes"
 )
 
 func getHeader() {
@@ -45,7 +46,8 @@ func main() {
 	switch choice {
 		case 1:
 			fmt.Println("Launching downloading engine...")
-			core.StartEngine()
+			engine, _ := core.CreateEngineInstance("eprint.db", 50, hermes.NewEprintSource(), hermes.NewFreeHavenSource())
+			core.StartEngine(engine)
 		case 2:
 			fmt.Println("Exiting program...")
 		default:
