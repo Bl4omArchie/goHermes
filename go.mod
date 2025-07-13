@@ -1,4 +1,4 @@
-module github.com/Bl4omArchie/eprint-DB
+module github.com/Bl4omArchie/goHermes
 
 go 1.24.2
 

@@ -13,7 +13,7 @@ In-coming : a manual discribing the scrapping behaviour for each sources.
 
 # Preview
 
-!["picture"](img/menu.png)
+!["preview"](preview.png)
 
 # Tutorial
 

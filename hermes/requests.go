@@ -1,19 +1,19 @@
-package core
+package hermes
 
 import (
-	"os"
-	"io"
-	"fmt"
-	"net/http"
 	"crypto/sha256"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"path/filepath"
+
 	"golang.org/x/net/html"
 )
 
-
 func GetPageContent(url string, errChan *Log) (string, error) {
 	resp, err := http.Get(url)
-	if (err != nil) {
+	if err != nil {
 		CreateLogReport(fmt.Sprintf("Log fetching URL %s: %v", url, err), errChan)
 		return "", err
 	}
@@ -33,9 +33,9 @@ func GetPageContent(url string, errChan *Log) (string, error) {
 	return string(data), nil
 }
 
-func GetParsedPageContent(url string, errChan *Log) (*html.Node, error){
+func GetParsedPageContent(url string, errChan *Log) (*html.Node, error) {
 	resp, err := http.Get(url)
-	if (err != nil) {
+	if err != nil {
 		CreateLogReport(fmt.Sprintf("Log fetching URL %s: %v", url, err), errChan)
 		return &html.Node{}, err
 	}

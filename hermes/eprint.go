@@ -1,47 +1,47 @@
-package core
+package hermes
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"path"
-	"sync"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"path/filepath"
+
 	"golang.org/x/net/html"
 )
 
 type EprintSource struct {
-	Name string
-	Path string
-	BaseUrl string
-	Endpoint string
+	Name           string
+	Path           string
+	BaseUrl        string
+	Endpoint       string
 	TotalDocuments int
-	PapersByYear map[string]int
-	Documents []*Document
+	PapersByYear   map[string]int
+	Documents      []*Document
 }
-
 
 func NewEprintSource() *EprintSource {
 	return &EprintSource{
-		Name: "Cryptology {ePrint} Archive",
-		Path: "pdf/eprint/",
-		BaseUrl: "https://eprint.iacr.org",
-		Endpoint: "/byyear",
+		Name:           "Cryptology {ePrint} Archive",
+		Path:           "pdf/eprint/",
+		BaseUrl:        "https://eprint.iacr.org",
+		Endpoint:       "/byyear",
 		TotalDocuments: 0,
-		PapersByYear: make(map[string]int),
-		Documents: make([]*Document, 0),
+		PapersByYear:   make(map[string]int),
+		Documents:      make([]*Document, 0),
 	}
 }
 
-func (f *EprintSource) Init(engine *Engine) error  {	
+func (f *EprintSource) Init(engine *Engine) error {
 	if err := os.MkdirAll(filepath.Dir(f.Path), os.ModePerm); err != nil {
 		CreateLogReport(fmt.Sprintf("Error while creating directories for %s: %v", f.Path, err), engine.Log)
 		return err
 	}
 
-	body, _ := GetPageContent(f.BaseUrl + f.Endpoint, engine.Log)
+	body, _ := GetPageContent(f.BaseUrl+f.Endpoint, engine.Log)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
@@ -108,7 +108,6 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 
 	return nil
 }
-
 
 func FetchMetadata(doc *Document, engine *Engine) error {
 	body, err := GetPageContent(doc.Url, engine.Log)

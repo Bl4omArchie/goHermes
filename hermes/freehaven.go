@@ -1,27 +1,27 @@
-package core
+package hermes
 
 import (
 	"os"
 	"fmt"
 	"strings"
 	"path/filepath"
+
 	"golang.org/x/net/html"
 )
 
 type FreeHavenSource struct {
-	Name string
-	Path string
-	BaseUrl string
+	Name           string
+	Path           string
+	BaseUrl        string
 	TotalDocuments int
-	Documents []*Document
+	Documents      []*Document
 }
-
 
 func NewFreeHavenSource() *FreeHavenSource {
 	return &FreeHavenSource{
-		Name: "FreeHaven",
-		Path: "pdf/freeHaven/",
-		BaseUrl: "https://www.freehaven.net/anonbib",
+		Name:      "FreeHaven",
+		Path:      "pdf/freeHaven/",
+		BaseUrl:   "https://www.freehaven.net/anonbib",
 		Documents: make([]*Document, 0),
 	}
 }

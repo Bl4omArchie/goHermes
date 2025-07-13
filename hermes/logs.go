@@ -1,26 +1,26 @@
-package core
+package hermes
 
 import (
-	"fmt"
 	"os"
+	"fmt"
 	"time"
 	"sync/atomic"
 )
 
 type LogReport struct {
-	Message  string
+	Message   string
 	Timestamp string
 }
 
 type Log struct {
-	logfile *os.File
+	logfile    *os.File
 	logChannel chan LogReport
-	count atomic.Uint64
+	count      atomic.Uint64
 }
 
 func CreateLogReport(msg string, logChannel *Log) {
 	logChannel.logChannel <- LogReport{
-		Message:  msg,
+		Message:   msg,
 		Timestamp: time.Now().Format(time.RFC850),
 	}
 	logChannel.count.Add(1)
@@ -28,13 +28,13 @@ func CreateLogReport(msg string, logChannel *Log) {
 
 func CreateLogChannel(engine *Engine) {
 	engine.Log = &Log{
-		logfile: CreateLogFile(),
+		logfile:    CreateLogFile(),
 		logChannel: make(chan LogReport),
-		count: atomic.Uint64{},
+		count:      atomic.Uint64{},
 	}
 }
 
-func CreateLogFile() (*os.File) {
+func CreateLogFile() *os.File {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
 		if err := os.Mkdir("logs", 0755); err != nil {
 			fmt.Printf("failed to create logs directory: %v", err)

@@ -1,8 +1,8 @@
-package core
+package hermes
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"sync"
 
 	"gorm.io/gorm"
@@ -14,14 +14,14 @@ type Source interface {
 }
 
 type Engine struct {
-	Log *Log
-	SqliteDb *gorm.DB
-	DatabaseName string
+	Log             *Log
+	SqliteDb        *gorm.DB
+	DatabaseName    string
 	NumWorkersPools int
-	Sources []Source
+	Sources         []Source
 }
 
-func CreateEngineInstance(databaseName string, workers int, sources... Source) (*Engine, error) {	
+func CreateEngineInstance(databaseName string, workers int, sources ...Source) (*Engine, error) {
 	engine := &Engine{DatabaseName: databaseName, NumWorkersPools: workers}
 
 	CreateLogChannel(engine)
@@ -54,7 +54,7 @@ func CreateEngineInstance(databaseName string, workers int, sources... Source) (
 	return engine, nil
 }
 
-func StartEngine(engine *Engine) (error) {
+func StartEngine(engine *Engine) error {
 	defer ExitEngineInstance(engine)
 
 	if err := MigrateSqliteDatabase(engine, &Document{}); err != nil {
@@ -76,7 +76,7 @@ func StartEngine(engine *Engine) (error) {
 	return nil
 }
 
-func ExitEngineInstance(engine *Engine) (error) {
+func ExitEngineInstance(engine *Engine) error {
 	close(engine.Log.logChannel)
 	err := CloseSqliteDatabase(engine)
 	return err

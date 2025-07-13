@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	
+
 	"github.com/Bl4omArchie/goHermes/hermes"
+
 )
 
 func getHeader() {
@@ -46,8 +47,8 @@ func main() {
 	switch choice {
 		case 1:
 			fmt.Println("Launching downloading engine...")
-			engine, _ := core.CreateEngineInstance("eprint.db", 50, hermes.NewEprintSource(), hermes.NewFreeHavenSource())
-			core.StartEngine(engine)
+			engine, _ := hermes.CreateEngineInstance("eprint.db", 50, hermes.NewEprintSource(), hermes.NewFreeHavenSource())
+			hermes.StartEngine(engine)
 		case 2:
 			fmt.Println("Exiting program...")
 		default:
