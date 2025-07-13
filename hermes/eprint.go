@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"path/filepath"
 
 	"golang.org/x/net/html"
@@ -60,38 +59,28 @@ func (f *EprintSource) Init(engine *Engine) error {
 	return nil
 }
 
+
 func (f *EprintSource) Fetch(engine *Engine) error {
 	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	for year, papersYears := range f.PapersByYear {
-		yearUrl := f.BaseUrl + "/" + year + "/"
-
-		for docCount := 1; docCount < papersYears; docCount++ {
-			wg.Add(1)
-			docCount := docCount
-
-			go func() {
-				defer wg.Done()
-
-				docIdYear := fmt.Sprintf("%03d", docCount)
-				doc := &Document{
-					Url:    yearUrl + docIdYear,
-					Source: f.Name,
-				}
-				if err := FetchMetadata(doc, engine); err == nil {
-					mu.Lock()
-					f.Documents = append(f.Documents, doc)
-					mu.Unlock()
-					downloadPool.tasks <- doc
-				}
-			}()
-		}
-	}
 
 	go func() {
-		wg.Wait()
+		for year, papersYears := range f.PapersByYear {
+			yearUrl := f.BaseUrl + "/" + year + "/"
+
+			for docCount := 1; docCount < papersYears; docCount++ {
+				docIdYear := fmt.Sprintf("%03d", docCount)
+				doc := &Document{
+					Url: yearUrl + docIdYear,
+					Source: f.Name,
+				}
+				errFetchMeta := FetchMetadata(doc, engine)
+				if errFetchMeta != nil{
+					continue
+				}
+				f.Documents = append(f.Documents, doc)
+				downloadPool.tasks <- doc
+			}
+		}
 		close(downloadPool.tasks)
 	}()
 
@@ -105,7 +94,6 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 			InsertTable(engine, &result.toIngest)
 		}
 	}
-
 	return nil
 }
 

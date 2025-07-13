@@ -22,6 +22,7 @@ func NewFreeHavenSource() *FreeHavenSource {
 		Name:      "FreeHaven",
 		Path:      "pdf/freeHaven/",
 		BaseUrl:   "https://www.freehaven.net/anonbib",
+		TotalDocuments: 0,
 		Documents: make([]*Document, 0),
 	}
 }
