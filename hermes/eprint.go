@@ -45,16 +45,26 @@ func (f *EprintSource) Init(engine *Engine) error {
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
 
-	sum := 0
-	// Fill the struct with years
 	for _, match := range matches_years {
 		if len(match) == 3 {
 			docCount, _ := strconv.Atoi(match[2])
 			f.PapersByYear[match[1]] = docCount
-			sum += docCount
+
+			for count:=1; count<docCount; count++ {
+				doc := &Document{
+					Title: "",
+					Filetype: "",
+					Url: fmt.Sprintf("%s/%s/%03d", f.BaseUrl, match[1], count),
+					Filepath: "",
+					Hash:     "",
+					Release:  match[1],
+					Source: f.Name,
+				}
+				f.Documents = append(f.Documents, doc)
+				f.TotalDocuments++
+			}
 		}
 	}
-	f.TotalDocuments = sum
 
 	return nil
 }
@@ -64,20 +74,9 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
 
 	go func() {
-		for year, papersYears := range f.PapersByYear {
-			yearUrl := f.BaseUrl + "/" + year + "/"
-
-			for docCount := 1; docCount < papersYears; docCount++ {
-				docIdYear := fmt.Sprintf("%03d", docCount)
-				doc := &Document{
-					Url: yearUrl + docIdYear,
-					Source: f.Name,
-				}
-				errFetchMeta := FetchMetadata(doc, engine)
-				if errFetchMeta != nil{
-					continue
-				}
-				f.Documents = append(f.Documents, doc)
+		for _, doc := range f.Documents {
+			errFetchMeta := FetchMetadata(doc, engine)
+			if errFetchMeta == nil{
 				downloadPool.tasks <- doc
 			}
 		}
@@ -96,6 +95,7 @@ func (f *EprintSource) Fetch(engine *Engine) error {
 	}
 	return nil
 }
+
 
 func FetchMetadata(doc *Document, engine *Engine) error {
 	body, err := GetPageContent(doc.Url, engine.Log)

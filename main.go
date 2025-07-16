@@ -47,7 +47,7 @@ func main() {
 	switch choice {
 		case 1:
 			fmt.Println("Launching downloading engine...")
-			engine, _ := hermes.CreateEngineInstance("eprint.db", 50, hermes.NewEprintSource(), hermes.NewFreeHavenSource())
+			engine, _ := hermes.CreateEngineInstance("eprint.db", 50, hermes.NewEprintSource())
 			hermes.StartEngine(engine)
 		case 2:
 			fmt.Println("Exiting program...")
