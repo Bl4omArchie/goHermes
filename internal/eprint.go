@@ -1,26 +1,31 @@
 package hermes
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"path/filepath"
 
 	"golang.org/x/net/html"
+	"github.com/Bl4omArchie/goHermes/models"
 )
 
+
 type EprintSource struct {
-	Name           string
-	Path           string
-	BaseUrl        string
-	Endpoint       string
-	TotalDocuments int
-	PapersByYear   map[string]int
-	Documents      []*Document
+	Name           	string
+	Path           	string
+	BaseUrl        	string
+	Endpoint       	string
+	TotalDocuments	int
+	PapersByYear	map[string]int
+	Documents		[]*models.Document
+	Urls			[]string
 }
+
 
 func NewEprintSource() *EprintSource {
 	return &EprintSource{
@@ -30,17 +35,16 @@ func NewEprintSource() *EprintSource {
 		Endpoint:       "/byyear",
 		TotalDocuments: 0,
 		PapersByYear:   make(map[string]int),
-		Documents:      make([]*Document, 0),
+		Documents:      make([]*models.Document, 0),
+		Urls:			make([]string, 0),
 	}
 }
 
-func (f *EprintSource) Init(engine *Engine) error {
-	if err := os.MkdirAll(filepath.Dir(f.Path), os.ModePerm); err != nil {
-		CreateLogReport(fmt.Sprintf("Error while creating directories for %s: %v", f.Path, err), engine.Log)
-		return err
-	}
 
-	body, _ := GetPageContent(f.BaseUrl+f.Endpoint, engine.Log)
+func (es *EprintSource) FetchDocumentsUrls(ctx context.Context, network *HermesNetwork) ([]string, error) {
+	var docs []string = make([]string, 0)
+
+	body, _ := network.GetPageContent(ctx, es.BaseUrl+es.Endpoint)
 
 	re_years := regexp.MustCompile(`>(\d{4})</a> \((\d+) papers\)`)
 	matches_years := re_years.FindAllStringSubmatch(body, -1)
@@ -48,56 +52,19 @@ func (f *EprintSource) Init(engine *Engine) error {
 	for _, match := range matches_years {
 		if len(match) == 3 {
 			docCount, _ := strconv.Atoi(match[2])
-			f.PapersByYear[match[1]] = docCount
+			es.PapersByYear[match[1]] = docCount
 
 			for count:=1; count<docCount; count++ {
-				doc := &Document{
-					Title: "",
-					Filetype: "",
-					Url: fmt.Sprintf("%s/%s/%03d", f.BaseUrl, match[1], count),
-					Filepath: "",
-					Hash:     "",
-					Release:  match[1],
-					Source: f.Name,
-				}
-				f.Documents = append(f.Documents, doc)
-				f.TotalDocuments++
+				docs = append(docs, fmt.Sprintf("%s/%s/%03d", es.BaseUrl, match[1], count))
+				es.TotalDocuments++
 			}
 		}
 	}
 
-	return nil
+	return docs, nil
 }
 
-
-func (f *EprintSource) Fetch(engine *Engine) error {
-	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
-
-	go func() {
-		for _, doc := range f.Documents {
-			errFetchMeta := FetchMetadata(doc, engine)
-			if errFetchMeta == nil{
-				downloadPool.tasks <- doc
-			}
-		}
-		close(downloadPool.tasks)
-	}()
-
-	go func() {
-		downloadPool.waitgroup.Wait()
-		close(downloadPool.results)
-	}()
-
-	for result := range downloadPool.results {
-		if result.status == 1 {
-			InsertTable(engine, &result.toIngest)
-		}
-	}
-	return nil
-}
-
-
-func FetchMetadata(doc *Document, engine *Engine) error {
+func FetchMetadata(doc *models.Document, engine *Engine) error {
 	body, err := GetPageContent(doc.Url, engine.Log)
 	if err != nil {
 		CreateLogReport(fmt.Sprintf("Failed to get metadata for %s: %v", doc.Url, err), engine.Log)

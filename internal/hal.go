@@ -12,8 +12,8 @@ type HalSource struct {
 	Path           string
 	BaseUrl        string
 	Endpoint	   string
-	TotalDocuments int
-	Documents      []*Document
+	Totalmodels.Documents int
+	models.Documents      []*models.Document
 }
 
 func NewHalSource() *HalSource {
@@ -22,7 +22,7 @@ func NewHalSource() *HalSource {
 		Path:      "pdf/hal/",
 		BaseUrl:   "https://hal.science/search/index/?q=%2A&rows=30&level0_domain_s=info",
 		Endpoint:  "https://hal.science/search/index/?q=*&rows=30&level0_domain_s=info&page=800",
-		Documents: make([]*Document, 0),
+		models.Documents: make([]*models.Document, 0),
 	}
 }
 
@@ -39,7 +39,7 @@ func (f *HalSource) Fetch(engine *Engine) error {
 	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
 
 	go func() {
-		for _, doc := range f.Documents {
+		for _, doc := range f.models.Documents {
 			downloadPool.tasks <- doc
 		}
 		close(downloadPool.tasks)

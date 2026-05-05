@@ -32,12 +32,12 @@ type FreeHavenSource struct {
 	Name           string
 	Path           string
 	BaseUrl        string
-	TotalDocuments int
-	Documents      []*Document
+	Totalmodels.Documents int
+	models.Documents      []*models.Document
 }
 ```
-The four mandatory fields are **Name**, **Path**, **BaseUrl** and **Documents**. The name of the source, the path were to store the documents, the baseUrl were to download the documents and finally a list of every documents to Download.
-The last field is **TotalDocuments** which is only an informative data.
+The four mandatory fields are **Name**, **Path**, **BaseUrl** and **models.Documents**. The name of the source, the path were to store the documents, the baseUrl were to download the documents and finally a list of every documents to Download.
+The last field is **Totalmodels.Documents** which is only an informative data.
 
 
 

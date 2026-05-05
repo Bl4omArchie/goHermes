@@ -1,0 +1,5 @@
+database_path = "~/.hermes/database/hermes.db"
+datalake_dir = "~/.hermes/pdf/"
+
+logging_format = "json"
+logging_dir = "~/.hermes/logs/"

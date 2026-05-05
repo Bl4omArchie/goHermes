@@ -1,12 +1,14 @@
 package hermes
 
 import (
-	"os"
+	"context"
 	"fmt"
-	"strings"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/net/html"
+	"github.com/Bl4omArchie/goHermes/models"
 )
 
 type FreeHavenSource struct {
@@ -14,7 +16,7 @@ type FreeHavenSource struct {
 	Path           string
 	BaseUrl        string
 	TotalDocuments int
-	Documents      []*Document
+	Documents      []*models.Document
 }
 
 func NewFreeHavenSource() *FreeHavenSource {
@@ -23,17 +25,16 @@ func NewFreeHavenSource() *FreeHavenSource {
 		Path:      "pdf/freeHaven/",
 		BaseUrl:   "https://www.freehaven.net/anonbib",
 		TotalDocuments: 0,
-		Documents: make([]*Document, 0),
+		Documents: make([]*models.Document, 0),
 	}
 }
 
-func (f *FreeHavenSource) Init(engine *Engine) error {
+func (f *FreeHavenSource) Init(ctx context.Context, network *HermesNetwork) error {
 	if err := os.MkdirAll(filepath.Dir(f.Path), os.ModePerm); err != nil {
-		CreateLogReport(fmt.Sprintf("Error while creating directories for %s: %v", f.Path, err), engine.Log)
-		return err
+		return fmt.Errorf("Error while creating directories for %s: %v", f.Path, err)
 	}
 
-	body, _ := GetPageContent(f.BaseUrl, engine.Log)
+	body, _ := network.GetPageContent(ctx, f.BaseUrl)
 
 	root, err := html.Parse(strings.NewReader(string(body)))
 	if err != nil {
@@ -86,7 +87,7 @@ func (f *FreeHavenSource) Init(engine *Engine) error {
 				} else {
 					fullUrl = url
 				}
-				doc := &Document{
+				doc := &models.Document{
 					Title:    title,
 					Filetype: filetype,
 					Url:      fullUrl,
@@ -105,28 +106,5 @@ func (f *FreeHavenSource) Init(engine *Engine) error {
 	}
 	walk(root)
 
-	return nil
-}
-
-func (f *FreeHavenSource) Fetch(engine *Engine) error {
-	downloadPool := StartDownloadPool(engine.NumWorkersPools, engine)
-
-	go func() {
-		for _, doc := range f.Documents {
-			downloadPool.tasks <- doc
-		}
-		close(downloadPool.tasks)
-	}()
-
-	go func() {
-		downloadPool.waitgroup.Wait()
-		close(downloadPool.results)
-	}()
-
-	for result := range downloadPool.results {
-		if result.status == 1 {
-			InsertTable(engine, &result.toIngest)
-		}
-	}
 	return nil
 }
