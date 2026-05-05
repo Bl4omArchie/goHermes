@@ -40,6 +40,7 @@ func GetIntegerInput(message string) int {
 }
 
 func main() {
+	fmt.Println("Hello world")
 	getHeader()
 	getMenu()
 	choice := GetIntegerInput("Input your option : ")
@@ -47,7 +48,7 @@ func main() {
 	switch choice {
 		case 1:
 			fmt.Println("Launching downloading engine...")
-			engine, _ := hermes.CreateEngineInstance("eprint.db", 50, hermes.NewEprintSource())
+			engine, _ := hermes.CreateEngineInstance("hermes.db", 50, hermes.NewFreeHavenSource(), hermes.NewEprintSource())
 			hermes.StartEngine(engine)
 		case 2:
 			fmt.Println("Exiting program...")

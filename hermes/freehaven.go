@@ -86,7 +86,6 @@ func (f *FreeHavenSource) Init(engine *Engine) error {
 				} else {
 					fullUrl = url
 				}
-
 				doc := &Document{
 					Title:    title,
 					Filetype: filetype,

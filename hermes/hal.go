@@ -57,4 +57,3 @@ func (f *HalSource) Fetch(engine *Engine) error {
 	}
 	return nil
 }
-
