@@ -3,9 +3,7 @@ package hermes
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -62,6 +60,14 @@ func (es *EprintSource) FetchDocumentsUrls(ctx context.Context, network *HermesN
 	}
 
 	return docs, nil
+}
+
+func (es *EprintSource) Run() {
+	
+}
+
+func (es *EprintSource) nextPage() {
+	
 }
 
 func FetchMetadata(doc *models.Document, engine *Engine) error {

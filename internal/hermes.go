@@ -1,11 +1,9 @@
 package hermes
 
 import (
-	"fmt"
-	"sync"
-
 	"github.com/Bl4omArchie/goHermes/models"
 )
+
 
 type HermesApp struct {
 	Logging  *SlogWrapper

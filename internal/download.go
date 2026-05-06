@@ -6,27 +6,18 @@ import (
 )
 
 
-type NetworkAction int
-const (
-	DonwloadAndHash NetworkAction = iota
-	Download
-	Request
-)
-
-
 type NetworkPipeline struct {
-	input    chan *NetworkInput
+	input    chan *DownloadInput
 	output   chan *DownloadOutput
 	workers  int
 	network  *HermesNetwork
 }
 
 
-type NetworkInput struct {
-	Url 	string
-	Action  NetworkAction
+type DownloadInput struct {
+	Url string
+	Path string
 }
-
 
 type DownloadOutput struct {
 	Document		*models.DownloadedDocument
@@ -37,7 +28,7 @@ type DownloadOutput struct {
 
 func NewNetworkPipeline(network *HermesNetwork, workers int) *NetworkPipeline {
 	return &NetworkPipeline{
-		input:   make(chan *NetworkInput),
+		input:   make(chan *DownloadInput),
 		output:  make(chan *DownloadOutput),
 		workers: workers,
 		network: network,
@@ -72,20 +63,13 @@ func (p *NetworkPipeline) worker(ctx context.Context) {
 				return
 			}
 
-			switch input.Action {
-			case DonwloadAndHash:
-				hash, err := p.network.DownloadDocumentReturnHash(ctx, url, doc.Path)
-				p.output <- NewDownloadOutput(models.NewDownloadedDocument(doc.Url, hash), err == nil, err)
-			
-			case Request:
-				hash, err := p.network.DownloadDocumentReturnHash(ctx, url, doc.Path)
-				p.output <- NewDownloadOutput(models.NewDownloadedDocument(doc.Url, hash), err == nil, err)
-			}
+			hash, err := p.network.DownloadDocumentReturnHash(ctx, input.Url, input.Path)
+			p.output <- NewDownloadOutput(models.NewDownloadedDocument(input.Url, hash), err == nil, err)
 		}
 	}
 }
 
-func (p *NetworkPipeline) In() chan<- string {
+func (p *NetworkPipeline) In() chan<- *DownloadInput {
 	return p.input
 }
 

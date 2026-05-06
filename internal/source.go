@@ -8,9 +8,10 @@ import (
 
 
 type Source interface {
-	FetchDocumentsUrls(ctx context.Context, network *HermesNetwork) ([]string, error)
-	FetchDocumentMetadata(ctx context.Context, network *HermesNetwork) ([]*models.Document, error)
+	nextPage() string
+	ExtractUrls() []models.DistantDocument
 }
+
 
 
 func FetchSource(source Source, workers int, network *HermesNetwork, db *HermesDatabase) {
@@ -22,7 +23,7 @@ func FetchSource(source Source, workers int, network *HermesNetwork, db *HermesD
 	pipeline.Start(ctx)
 
 	go func() {
-		urls, err := source.FetchDocumentsUrls(ctx, network)
+		urls, err := source.ExtractUrls(ctx, network)
 		if err != nil {
 			for _, url := range urls {
 				pipeline.In() <- url
@@ -37,10 +38,4 @@ func FetchSource(source Source, workers int, network *HermesNetwork, db *HermesD
 		}
 		// else : store into the invalid url database
 	}
-}
-
-
-type DownloadDocument interface {
-	GetPages() string
-	GetUrls() []models.DistantDocument
 }

@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/Bl4omArchie/goHermes/internal"
 )
 
 func getHeader() {
@@ -47,7 +45,5 @@ func main() {
 	getHeader()
 
 	args := os.Args[1:]
-	cfg := CreateHermesEngineConfig(args)
-	
-	hermes.CreateEngineInstance(cfg.DatabaseName, cfg.NumWorkers, cfg.Sources)
+	_ = CreateHermesEngineConfig(args)
 }
